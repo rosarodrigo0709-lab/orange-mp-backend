@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Sector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#FF9900">
+
+  <link rel="apple-touch-icon" href="/icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sector">
+
+  <meta name="mobile-web-app-capable" content="yes">
+</head>
+
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">🏭 SECTOR</h1>
+      <p class="panel-subtitle">Preparación de pedidos</p>
+    </div>
+    <div class="panel-badge">Sector</div>
+    <button onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+  </div>
+
+  <div class="panel-section">
+    <h2 class="panel-section-title">Pedidos pagados pendientes</h2>
+    <div id="pedidos"></div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+const params = new URLSearchParams(window.location.search);
+const sectorActual = params.get("sector") || "cocina";
+const nombreSectorVisible = sectorActual.replace(/_/g, " ");
+
+const contenedor = document.getElementById("pedidos");
+
+document.title = nombreSectorVisible.toUpperCase();
+
+document.querySelector(".panel-title").textContent =
+  "🏭 " + nombreSectorVisible.toUpperCase();
+
+document.querySelector(".panel-subtitle").textContent =
+  "Preparación de pedidos de " + nombreSectorVisible;
+
+document.querySelector(".panel-badge").textContent = nombreSectorVisible;
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    localStorage.setItem("volverDespuesLogin", `sector.html?sector=${sectorActual}`);
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = user.email || "";
+
+  const usuariosPermitidos = [
+    "admin@orange.com"
+  ];
+
+  if (!usuariosPermitidos.includes(email)) {
+    alert("Acceso denegado. Por ahora solo admin puede entrar a los sectores.");
+    firebase.auth().signOut();
+    return;
+  }
+
+  console.log("✅ Usuario autorizado sector:", email);
+});
+
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+function obtenerItemsPedido(data) {
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    return data.items;
+  }
+
+  const items = [];
+  const pedidoViejo = data.pedido || {};
+
+  for (let nombre in pedidoViejo) {
+    const item = pedidoViejo[nombre] || {};
+
+    items.push({
+      nombre: nombre,
+      cantidad: Number(item.cantidad || 0),
+      precio: Number(item.precio || 0),
+      subtotal: Number(item.precio || 0) * Number(item.cantidad || 0),
+      sector: item.sector || "",
+      productoId: item.productoId || "",
+      automatico: item.automatico === true
+    });
+  }
+
+  return items;
+}
+
+function renderProductos(data) {
+  const items = obtenerItemsPedido(data);
+  let html = "";
+
+  items.forEach((item) => {
+    if (item.sector === sectorActual) {
+      let nombreMostrar = item.nombre || "";
+
+      if (nombreMostrar.startsWith("Pizza")) {
+        nombreMostrar = "🍕 " + nombreMostrar;
+      }
+
+      if (nombreMostrar.startsWith("Empanadas")) {
+        nombreMostrar = "🥟 " + nombreMostrar;
+      }
+
+      html += `<li>${nombreMostrar} x${item.cantidad}</li>`;
+    }
+  });
+
+  return html;
+}
+
+db.collection("pedidos")
+  .where("estado.caja", "==", "pagado")
+  .where(`estado.${sectorActual}`, "in", ["pendiente", "en_preparacion"])
+  .orderBy("fecha", "desc")
+  .limit(50)
+  .onSnapshot((snapshot) => {
+    contenedor.innerHTML = "";
+
+    if (snapshot.empty) {
+      contenedor.innerHTML = `
+        <div class="panel-card">
+          <p>No hay pedidos pendientes de ${nombreSectorVisible}.</p>
+        </div>
+      `;
+      return;
+    }
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      if (!data.estado) return;
+
+      const htmlProductos = renderProductos(data);
+      if (!htmlProductos) return;
+
+      const estadoSector = data.estado[sectorActual];
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+
+      let botones = "";
+
+      if (estadoSector === "pendiente") {
+        botones = `<button onclick="preparar('${doc.id}')">👨‍🍳 Preparar</button>`;
+      }
+
+      if (estadoSector === "en_preparacion") {
+        botones = `<button onclick="listo('${doc.id}')">✅ Listo</button>`;
+      }
+
+      div.innerHTML = `
+        <h3>Pedido ${data.numeroPedido || "-"}${data.nombreCliente ? " · " + data.nombreCliente : ""}</h3>
+        <p>Estado ${nombreSectorVisible}: ${estadoSector}</p>
+        <ul>${htmlProductos}</ul>
+        ${botones}
+      `;
+
+      contenedor.appendChild(div);
+    });
+  }, (error) => {
+    console.log("ERROR ESCUCHANDO SECTOR:", error);
+    contenedor.innerHTML = `
+      <div class="panel-card">
+        <p>Error al cargar pedidos de ${nombreSectorVisible}.</p>
+      </div>
+    `;
+  });
+
+function preparar(id) {
+  db.collection("pedidos").doc(id).update({
+    [`estado.${sectorActual}`]: "en_preparacion"
+  })
+  .then(() => {
+    console.log(`${nombreSectorVisible} en preparación`);
+  })
+  .catch((error) => {
+    console.error("Error al marcar en preparación:", error);
+    alert("Error al marcar en preparación");
+  });
+}
+
+function listo(id) {
+  db.collection("pedidos").doc(id).update({
+    [`estado.${sectorActual}`]: "listo"
+  })
+  .then(() => {
+    console.log(`${nombreSectorVisible} listo`);
+  })
+  .catch((error) => {
+    console.error("Error al marcar como listo:", error);
+    alert("Error al marcar como listo");
+  });
+}
+
+function cerrarSesion() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+</script>
+
+</body>
+</html>

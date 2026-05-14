@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Orange</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#FF9900">
+</head>
+
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">⚙️ ADMIN</h1>
+      <p class="panel-subtitle">Configuración general del sistema</p>
+    </div>
+    <div class="panel-badge">Orange Brewery</div>
+    <button onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+  </div>
+
+  <div class="panel-section">
+    <h2 class="panel-section-title">🎨 Página del cliente</h2>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Nombre del negocio:</label>
+        <input type="text" id="nombreNegocio" placeholder="Ej: Orange Brewery">
+      </div>
+
+      <div>
+        <label>Subtítulo:</label>
+        <input type="text" id="subtituloNegocio" placeholder="Ej: Bebidas · Tragos · Cocina">
+      </div>
+    </div>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Color principal:</label>
+        <input type="color" id="colorPrincipal" value="#FF9900">
+      </div>
+
+      <div>
+        <label>Imagen de portada:</label>
+        <input type="text" id="imagenPortada" placeholder="assets/portada/cerveza-frias.png">
+      </div>
+    </div>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Alias transferencia:</label>
+        <input type="text" id="aliasTransferencia" placeholder="Ej: ORANGE.24">
+      </div>
+
+      <div>
+        <label>CVU / CBU:</label>
+        <input type="text" id="cvuTransferencia" placeholder="Ej: 0000003100073058856505">
+      </div>
+    </div>
+
+<div class="panel-form-row">
+  <div>
+    <label>
+      <input type="checkbox" id="modoSalon">
+      Consumir en el lugar
+    </label>
+  </div>
+
+  <div>
+    <label>
+      <input type="checkbox" id="modoRetiro">
+      Retirar en el local
+    </label>
+  </div>
+
+  <div>
+    <label>
+      <input type="checkbox" id="modoDelivery">
+      Delivery / Envío
+    </label>
+  </div>
+</div>
+
+    <div class="cierre-actions">
+      <button onclick="guardarConfiguracion()">💾 Guardar configuración</button>
+    </div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <div class="panel-section">
+  <h2 class="panel-section-title">🖼️ Diseño avanzado del inicio cliente</h2>
+
+  <div class="panel-form-row">
+    <div>
+      <label>Logo del negocio:</label>
+      <input type="text" id="logoClienteAdmin" placeholder="assets/logo.png">
+    </div>
+
+    <div>
+      <label>Texto botón notificaciones:</label>
+      <input type="text" id="textoBotonNotificaciones" placeholder="Activar Notificaciones">
+    </div>
+  </div>
+
+  <div class="panel-form-row">
+    <div>
+      <label>Mensaje promocional:</label>
+      <input type="text" id="mensajePromo" placeholder="Ej: Pedí desde la mesa y te avisamos cuando esté listo">
+    </div>
+
+    <div>
+      <label>Imagen banner promocional:</label>
+      <input type="text" id="imagenPromo" placeholder="assets/portada/promo.png">
+    </div>
+  </div>
+
+  <div class="panel-form-row">
+    <div>
+      <label>
+        <input type="checkbox" id="mostrarBebidas">
+        Mostrar Bebidas
+      </label>
+    </div>
+
+    <div>
+      <label>
+        <input type="checkbox" id="mostrarTragos">
+        Mostrar Tragos
+      </label>
+    </div>
+
+    <div>
+      <label>
+        <input type="checkbox" id="mostrarCocina">
+        Mostrar Cocina
+      </label>
+    </div>
+  </div>
+
+  <div class="cierre-actions">
+    <button onclick="guardarConfiguracion()">💾 Guardar diseño completo</button>
+  </div>
+</div>
+
+<div class="panel-divider"></div>
+
+<div class="panel-section">
+  <h2 class="panel-section-title">🧩 Sectores y categorías del menú</h2>
+
+  <div class="panel-card" style="margin-bottom:20px;">
+    <h3>Crear / editar sector</h3>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Nombre del sector:</label>
+        <input type="text" id="sectorNombre" placeholder="Ej: Heladería">
+      </div>
+
+      <div>
+        <label>Ícono:</label>
+        <input type="text" id="sectorIcono" placeholder="Ej: icecream">
+      </div>
+    </div>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Orden:</label>
+        <input type="number" id="sectorOrden" placeholder="Ej: 4">
+      </div>
+
+      <div>
+        <label>Estado:</label>
+        <select id="sectorActivo">
+          <option value="true">Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cierre-actions">
+      <button onclick="guardarSector()">💾 Guardar sector</button>
+      <button class="btn-secundario" onclick="limpiarSector()">❌ Limpiar</button>
+    </div>
+  </div>
+
+  <div class="panel-card" style="margin-bottom:20px;">
+    <h3>Crear categoría dentro de un sector</h3>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Sector:</label>
+        <select id="categoriaSector"></select>
+      </div>
+
+      <div>
+        <label>Nombre categoría:</label>
+        <input type="text" id="categoriaNombre" placeholder="Ej: Licuados">
+      </div>
+    </div>
+
+    <div class="panel-form-row">
+      
+      <div>
+        <label>Orden:</label>
+        <input type="number" id="categoriaOrden" placeholder="Ej: 1">
+      </div>
+    </div>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Estado:</label>
+        <select id="categoriaActiva">
+          <option value="true">Activa</option>
+          <option value="false">Inactiva</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cierre-actions">
+      <button onclick="agregarCategoria()">➕ Agregar categoría</button>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <h3>Sectores cargados</h3>
+    <div id="listaSectoresMenu"></div>
+  </div>
+</div>
+
+<div class="panel-divider"></div>
+
+<div class="panel-section">
+  <h2 class="panel-section-title">🏭 Sectores de producción</h2>
+
+  <div class="panel-card" style="margin-bottom:20px;">
+    <h3>Crear / editar sector de producción</h3>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Nombre del sector:</label>
+        <input type="text" id="sectorProduccionNombre" placeholder="Ej: Cocina">
+      </div>
+
+      <div>
+        <label>Ícono:</label>
+        <input type="text" id="sectorProduccionIcono" placeholder="Ej: restaurant">
+      </div>
+    </div>
+
+    <div class="panel-form-row">
+      <div>
+        <label>Orden:</label>
+        <input type="number" id="sectorProduccionOrden" placeholder="Ej: 1">
+      </div>
+
+      <div>
+        <label>Estado:</label>
+        <select id="sectorProduccionActivo">
+          <option value="true">Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cierre-actions">
+      <button onclick="guardarSectorProduccion()">
+        💾 Guardar sector producción
+      </button>
+
+      <button class="btn-secundario" onclick="limpiarSectorProduccion()">
+        ❌ Limpiar
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <h3>Sectores de producción cargados</h3>
+    <div id="listaSectoresProduccion"></div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    localStorage.setItem("volverDespuesLogin", "admin.html");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = user.email || "";
+
+  if (email !== "admin@orange.com") {
+    alert("Acceso denegado. Esta pantalla es solo para administrador.");
+    firebase.auth().signOut();
+    return;
+  }
+
+  console.log("✅ Usuario administrador autorizado:", email);
+});
+
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+db.collection("configuracion_cliente").doc("actual")
+  .onSnapshot((doc) => {
+    if (!doc.exists) return;
+
+    const data = doc.data();
+
+    document.getElementById("nombreNegocio").value = data.nombreNegocio || "";
+    document.getElementById("subtituloNegocio").value = data.subtituloNegocio || "";
+    document.getElementById("colorPrincipal").value = data.colorPrincipal || "#FF9900";
+    document.getElementById("imagenPortada").value = data.imagenPortada || "";
+    document.getElementById("aliasTransferencia").value = data.aliasTransferencia || "";
+    document.getElementById("cvuTransferencia").value = data.cvuTransferencia || "";
+    document.getElementById("logoClienteAdmin").value = data.logoCliente || "";
+    document.getElementById("textoBotonNotificaciones").value = data.textoBotonNotificaciones || "";
+    document.getElementById("mensajePromo").value = data.mensajePromo || "";
+    document.getElementById("imagenPromo").value = data.imagenPromo || "";
+
+    document.getElementById("mostrarBebidas").checked = data.mostrarBebidas !== false;
+    document.getElementById("mostrarTragos").checked = data.mostrarTragos !== false;
+    document.getElementById("mostrarCocina").checked = data.mostrarCocina !== false;
+    const modosVenta = data.modosVenta || {};
+    document.getElementById("modoSalon").checked = modosVenta.salon === true;
+    document.getElementById("modoRetiro").checked = modosVenta.retiro === true;
+    document.getElementById("modoDelivery").checked = modosVenta.delivery === true;
+});
+
+async function guardarConfiguracion() {
+  const nombreNegocio = document.getElementById("nombreNegocio").value.trim();
+  const subtituloNegocio = document.getElementById("subtituloNegocio").value.trim();
+  const colorPrincipal = document.getElementById("colorPrincipal").value;
+  const imagenPortada = document.getElementById("imagenPortada").value.trim();
+  const aliasTransferencia = document.getElementById("aliasTransferencia").value.trim();
+  const cvuTransferencia = document.getElementById("cvuTransferencia").value.trim();
+  const logoCliente = document.getElementById("logoClienteAdmin").value.trim();
+  const textoBotonNotificaciones = document.getElementById("textoBotonNotificaciones").value.trim();
+  const mensajePromo = document.getElementById("mensajePromo").value.trim();
+  const imagenPromo = document.getElementById("imagenPromo").value.trim();
+  
+  const mostrarBebidas = document.getElementById("mostrarBebidas").checked;
+  const mostrarTragos = document.getElementById("mostrarTragos").checked;
+  const mostrarCocina = document.getElementById("mostrarCocina").checked;
+
+  try {
+    await db.collection("configuracion_cliente").doc("actual").set({
+  nombreNegocio,
+  subtituloNegocio,
+  colorPrincipal,
+  imagenPortada,
+  aliasTransferencia,
+  cvuTransferencia,
+  logoCliente,
+  textoBotonNotificaciones,
+  mensajePromo,
+  imagenPromo,
+  mostrarBebidas,
+  mostrarTragos,
+  mostrarCocina,
+
+  modosVenta: {
+    salon: document.getElementById("modoSalon").checked,
+    retiro: document.getElementById("modoRetiro").checked,
+    delivery: document.getElementById("modoDelivery").checked
+  },
+
+  actualizado: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
+
+    alert("Configuración guardada correctamente");
+
+  } catch (error) {
+    console.log("ERROR AL GUARDAR CONFIGURACION:", error);
+    alert("Error al guardar configuración");
+  }
+}
+
+let sectoresMenuCache = [];
+let sectorEditandoId = null;
+let sectoresProduccionCache = [];
+let sectorProduccionEditandoId = null;
+
+function crearClave(texto) {
+  return String(texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function limpiarSector() {
+  sectorEditandoId = null;
+  document.getElementById("sectorNombre").value = "";
+  document.getElementById("sectorIcono").value = "";
+  document.getElementById("sectorOrden").value = "";
+  document.getElementById("sectorActivo").value = "true";
+}
+function limpiarSectorProduccion() {
+  sectorProduccionEditandoId = null;
+
+  document.getElementById("sectorProduccionNombre").value = "";
+  document.getElementById("sectorProduccionIcono").value = "";
+  document.getElementById("sectorProduccionOrden").value = "";
+  document.getElementById("sectorProduccionActivo").value = "true";
+}
+
+async function guardarSectorProduccion() {
+  const nombre = document.getElementById("sectorProduccionNombre").value.trim();
+  const icono = document.getElementById("sectorProduccionIcono").value.trim() || "restaurant";
+  const orden = Number(document.getElementById("sectorProduccionOrden").value || 0);
+  const activo = document.getElementById("sectorProduccionActivo").value === "true";
+
+  if (!nombre) {
+    alert("Ingresá el nombre del sector");
+    return;
+  }
+
+  try {
+    const dataSector = {
+      nombre,
+      icono,
+      orden,
+      activo,
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (sectorProduccionEditandoId) {
+      await db.collection("sectores_produccion")
+        .doc(sectorProduccionEditandoId)
+        .set(dataSector, { merge: true });
+
+      alert("Sector de producción actualizado");
+    } else {
+      dataSector.clave = crearClave(nombre);
+      dataSector.fechaCreacion = firebase.firestore.FieldValue.serverTimestamp();
+
+      await db.collection("sectores_produccion").add(dataSector);
+
+      alert("Sector de producción creado");
+    }
+
+    limpiarSectorProduccion();
+
+  } catch (error) {
+    console.log("ERROR AL GUARDAR SECTOR PRODUCCION:", error);
+    alert("Error al guardar sector producción");
+  }
+}
+
+function editarSectorProduccion(id) {
+  const sector = sectoresProduccionCache.find(s => s.id === id);
+  if (!sector) return;
+
+  sectorProduccionEditandoId = id;
+
+  document.getElementById("sectorProduccionNombre").value =
+    sector.nombre || "";
+
+  document.getElementById("sectorProduccionIcono").value =
+    sector.icono || "";
+
+  document.getElementById("sectorProduccionOrden").value =
+    sector.orden || "";
+
+  document.getElementById("sectorProduccionActivo").value =
+    sector.activo === false ? "false" : "true";
+
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
+}
+
+async function eliminarSectorProduccion(id) {
+  const confirmar = confirm(
+    "¿Seguro querés eliminar este sector de producción?"
+  );
+
+  if (!confirmar) return;
+
+  try {
+    await db.collection("sectores_produccion")
+      .doc(id)
+      .delete();
+
+    alert("Sector eliminado");
+
+  } catch (error) {
+    console.log("ERROR AL ELIMINAR:", error);
+    alert("Error al eliminar");
+  }
+}
+
+function renderSectoresProduccion() {
+  const lista =
+    document.getElementById("listaSectoresProduccion");
+
+  lista.innerHTML = "";
+
+  if (sectoresProduccionCache.length === 0) {
+    lista.innerHTML = `
+      <p style="color:#999;">
+        No hay sectores de producción cargados.
+      </p>
+    `;
+    return;
+  }
+
+  sectoresProduccionCache
+    .sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0))
+    .forEach((sector) => {
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+      div.style.marginBottom = "16px";
+
+      div.innerHTML = `
+        <h3>${sector.icono || "restaurant"} · ${sector.nombre}</h3>
+
+        <p>Clave: ${sector.clave}</p>
+        <p>Orden: ${sector.orden || 0}</p>
+        <p>Estado:
+          ${sector.activo === false ? "Inactivo" : "Activo"}
+        </p>
+
+        <div class="cierre-actions" style="margin-top:14px;">
+  <button onclick="abrirSectorProduccion('${sector.clave}')">
+    👀 Abrir sector
+  </button>
+
+  <button onclick="editarSectorProduccion('${sector.id}')">
+    ✏️ Editar
+  </button>
+
+  <button class="btn-secundario"
+    onclick="eliminarSectorProduccion('${sector.id}')">
+    🗑️ Eliminar
+  </button>
+</div>
+      `;
+
+      lista.appendChild(div);
+    });
+}
+async function guardarSector() {
+  const nombre = document.getElementById("sectorNombre").value.trim();
+  const icono = document.getElementById("sectorIcono").value.trim() || "restaurant";
+  const orden = Number(document.getElementById("sectorOrden").value || 0);
+  const activo = document.getElementById("sectorActivo").value === "true";
+
+  if (!nombre) {
+    alert("Ingresá el nombre del sector");
+    return;
+  }
+
+  try {
+    const dataSector = {
+      nombre,
+      icono,
+      orden,
+      activo,
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (sectorEditandoId) {
+      await db.collection("sectores_menu")
+        .doc(sectorEditandoId)
+        .set(dataSector, { merge: true });
+
+      alert("Sector actualizado");
+    } else {
+      dataSector.clave = crearClave(nombre);
+      dataSector.categorias = [];
+      dataSector.fechaCreacion = firebase.firestore.FieldValue.serverTimestamp();
+
+      await db.collection("sectores_menu").add(dataSector);
+
+      alert("Sector creado");
+    }
+
+    limpiarSector();
+
+  } catch (error) {
+    console.log("ERROR AL GUARDAR SECTOR:", error);
+    alert("Error al guardar sector");
+  }
+}
+
+async function agregarCategoria() {
+  const sectorId = document.getElementById("categoriaSector").value;
+  const nombre = document.getElementById("categoriaNombre").value.trim();
+  const clave = crearClave(nombre);
+  const orden = Number(document.getElementById("categoriaOrden").value || 0);
+  const activa = document.getElementById("categoriaActiva").value === "true";
+
+  if (!sectorId) {
+    alert("Seleccioná un sector");
+    return;
+  }
+
+  if (!nombre) {
+    alert("Ingresá el nombre de la categoría");
+    return;
+  }
+
+  const sector = sectoresMenuCache.find(s => s.id === sectorId);
+  const categorias = Array.isArray(sector?.categorias) ? [...sector.categorias] : [];
+
+  if (categorias.some(c => c.clave === clave)) {
+    alert("Ya existe una categoría con esa clave");
+    return;
+  }
+
+  categorias.push({
+    nombre,
+    clave,
+    orden,
+    activa
+  });
+
+  categorias.sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+
+  try {
+    await db.collection("sectores_menu").doc(sectorId).set({
+      categorias,
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    document.getElementById("categoriaNombre").value = "";
+    document.getElementById("categoriaOrden").value = "";
+
+    alert("Categoría agregada");
+  } catch (error) {
+    console.log("ERROR AL AGREGAR CATEGORIA:", error);
+    alert("Error al agregar categoría");
+  }
+}
+
+function editarSector(id) {
+  const sector = sectoresMenuCache.find(s => s.id === id);
+  if (!sector) return;
+
+  sectorEditandoId = id;
+  document.getElementById("sectorNombre").value = sector.nombre || "";
+  document.getElementById("sectorIcono").value = sector.icono || "";
+  document.getElementById("sectorOrden").value = sector.orden || "";
+  document.getElementById("sectorActivo").value = sector.activo === false ? "false" : "true";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function eliminarSector(id) {
+  const confirmar = confirm("¿Eliminar este sector completo?");
+  if (!confirmar) return;
+
+  try {
+    await db.collection("sectores_menu").doc(id).delete();
+    alert("Sector eliminado");
+  } catch (error) {
+    console.log("ERROR AL ELIMINAR SECTOR:", error);
+    alert("Error al eliminar sector");
+  }
+}
+
+async function eliminarCategoria(sectorId, claveCategoria) {
+  const sector = sectoresMenuCache.find(s => s.id === sectorId);
+  if (!sector) return;
+
+  const confirmar = confirm("¿Eliminar esta categoría?");
+  if (!confirmar) return;
+
+  const categorias = (sector.categorias || []).filter(c => c.clave !== claveCategoria);
+
+  try {
+    await db.collection("sectores_menu").doc(sectorId).set({
+      categorias,
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    alert("Categoría eliminada");
+  } catch (error) {
+    console.log("ERROR AL ELIMINAR CATEGORIA:", error);
+    alert("Error al eliminar categoría");
+  }
+}
+
+function renderSectoresMenu() {
+  const lista = document.getElementById("listaSectoresMenu");
+  const select = document.getElementById("categoriaSector");
+
+  if (!lista || !select) return;
+
+  lista.innerHTML = "";
+  select.innerHTML = `<option value="">Seleccionar sector</option>`;
+
+  sectoresMenuCache
+    .sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0))
+    .forEach((sector) => {
+      select.innerHTML += `<option value="${sector.id}">${sector.nombre}</option>`;
+
+      const categorias = Array.isArray(sector.categorias) ? sector.categorias : [];
+
+      const categoriasHTML = categorias.length
+        ? categorias.map(cat => `
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px;padding:10px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+            <span>${cat.nombre} (${cat.clave}) · ${cat.activa === false ? "Inactiva" : "Activa"}</span>
+            <button class="btn-secundario" onclick="eliminarCategoria('${sector.id}', '${cat.clave}')">🗑️</button>
+          </div>
+        `).join("")
+        : `<p style="color:#999;margin-top:10px;">Sin categorías cargadas.</p>`;
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+      div.style.marginBottom = "16px";
+
+      div.innerHTML = `
+        <h3>${sector.icono || "restaurant"} · ${sector.nombre}</h3>
+        <p>Clave: ${sector.clave}</p>
+        <p>Orden: ${sector.orden || 0}</p>
+        <p>Estado: ${sector.activo === false ? "Inactivo" : "Activo"}</p>
+
+        <div style="margin-top:12px;">
+          <strong>Categorías:</strong>
+          ${categoriasHTML}
+        </div>
+
+        <div class="cierre-actions" style="margin-top:14px;">
+          <button onclick="editarSector('${sector.id}')">✏️ Editar sector</button>
+          <button class="btn-secundario" onclick="eliminarSector('${sector.id}')">🗑️ Eliminar sector</button>
+        </div>
+      `;
+
+      lista.appendChild(div);
+    });
+}
+
+db.collection("sectores_menu")
+  .onSnapshot((snapshot) => {
+    sectoresMenuCache = [];
+
+    snapshot.forEach((doc) => {
+      sectoresMenuCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    renderSectoresMenu();
+  }, (error) => {
+    console.log("ERROR AL CARGAR SECTORES:", error);
+  });
+
+  db.collection("sectores_produccion")
+  .onSnapshot((snapshot) => {
+
+    sectoresProduccionCache = [];
+
+    snapshot.forEach((doc) => {
+      sectoresProduccionCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    renderSectoresProduccion();
+
+  }, (error) => {
+    console.log(
+      "ERROR AL CARGAR SECTORES PRODUCCION:",
+      error
+    );
+  });
+
+  function abrirSectorProduccion(clave) {
+  window.location.href = `sector.html?sector=${clave}`;
+}
+
+function cerrarSesion() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+</script>
+
+</body>
+</html>

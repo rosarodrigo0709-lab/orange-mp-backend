@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Caja</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">💵 CAJA</h1>
+      <p class="panel-subtitle">Cobro de pedidos y cierre de caja</p>
+    </div>
+    <div class="panel-badge">Orange Brewery</div>
+    <button onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+  </div>
+
+  <div class="panel-section">
+    <h2 class="panel-section-title">Pedidos pendientes de cobro</h2>
+    <div id="pedidos"></div>
+  </div>
+
+<div class="panel-section">
+  <h2 class="panel-section-title">📦 Pedidos listos para entregar</h2>
+  <div id="pedidosListos"></div>
+</div>
+
+<div class="panel-divider"></div>
+
+  <div class="cierre-box">
+    <h2 class="panel-section-title">🔒 Cerrar caja</h2>
+
+    <div class="panel-form-row">
+      <div>
+        <label for="nombreCajero">Nombre del cajero:</label>
+        <input type="text" id="nombreCajero" placeholder="Ej: Rodrigo">
+      </div>
+
+      <div>
+        <label for="montoEnviado">Monto enviado a central:</label>
+        <input type="number" id="montoEnviado" placeholder="Ej: 50000">
+      </div>
+    </div>
+
+    <div class="cierre-actions">
+      <button onclick="cerrarCaja()">📦 Cerrar caja</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    localStorage.setItem("volverDespuesLogin", "caja.html");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = user.email || "";
+
+  const usuariosPermitidos = [
+    "caja@orange.com",
+    "admin@orange.com"
+  ];
+
+  if (!usuariosPermitidos.includes(email)) {
+    alert("Acceso denegado. Esta pantalla es solo para caja.");
+    firebase.auth().signOut();
+    return;
+  }
+
+  console.log("✅ Usuario autorizado caja:", email);
+});
+
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+const contenedor = document.getElementById("pedidos");
+const contenedorListos = document.getElementById("pedidosListos");
+
+  
+let productosCacheCaja = [];
+
+db.collection("productos")
+  .onSnapshot((snapshot) => {
+    productosCacheCaja = [];
+
+    snapshot.forEach((doc) => {
+      productosCacheCaja.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    console.log("Productos cargados en caja:", productosCacheCaja.length);
+  });
+
+function obtenerItemsPedido(data) {
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    return data.items;
+  }
+
+  const items = [];
+  const pedidoViejo = data.pedido || {};
+
+  for (let nombre in pedidoViejo) {
+    const item = pedidoViejo[nombre] || {};
+
+    items.push({
+      nombre: nombre,
+      cantidad: Number(item.cantidad || 0),
+      precio: Number(item.precio || 0),
+      subtotal: Number(item.precio || 0) * Number(item.cantidad || 0),
+      sector: item.sector || "",
+      productoId: item.productoId || "",
+      automatico: item.automatico === true
+    });
+  }
+
+  return items;
+}
+
+function renderPedido(data) {
+  const items = obtenerItemsPedido(data);
+  let html = "";
+
+  items.forEach((item) => {
+    html += `<li>${item.nombre} x${item.cantidad}</li>`;
+  });
+
+  return html;
+}
+
+function obtenerFechaTextoLocal() {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
+function normalizarTexto(texto) {
+  return String(texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function encontrarProductoBasePorNombreVenta(nombreProductoVenta, productosLista) {
+  const nombreNormalizado = normalizarTexto(nombreProductoVenta);
+
+  // 1) Buscar coincidencia exacta primero
+  let productoEncontrado = productosLista.find((producto) => {
+    return normalizarTexto(producto.nombre) === nombreNormalizado;
+  });
+
+  if (productoEncontrado) return productoEncontrado;
+
+  // 2) Buscar por prefijo cuando el pedido tiene variantes con sabores
+  // Ej: "Pizza entera - Rucula" => "Pizza"
+  // Ej: "Caipira - Frutos rojos" => "Caipira"
+  // Ej: "Daiquiri - Frutilla" => "Daiquiri"
+  productoEncontrado = productosLista.find((producto) => {
+    const nombreBase = normalizarTexto(producto.nombre);
+    return nombreNormalizado === nombreBase || nombreNormalizado.startsWith(nombreBase + " ");
+  });
+
+  if (productoEncontrado) return productoEncontrado;
+
+  // 3) Buscar por casos especiales tipo " - "
+  const nombreAntesGuion = nombreNormalizado.split(" - ")[0].trim();
+
+  if (nombreAntesGuion) {
+    productoEncontrado = productosLista.find((producto) => {
+      const nombreBase = normalizarTexto(producto.nombre);
+      return nombreBase === nombreAntesGuion;
+    });
+  }
+
+  if (productoEncontrado) return productoEncontrado;
+
+  // 4) Buscar por inclusión, por si hay variantes más largas
+  productoEncontrado = productosLista.find((producto) => {
+    const nombreBase = normalizarTexto(producto.nombre);
+    return nombreNormalizado.includes(nombreBase);
+  });
+
+  return productoEncontrado || null;
+}
+
+async function construirDetalleGananciaVenta(dataPedidoCompleto) {
+  const itemsPedido = obtenerItemsPedido(dataPedidoCompleto);
+  const items = [];
+
+  let totalVenta = 0;
+  let totalCosto = 0;
+  let totalGanancia = 0;
+
+  if (itemsPedido.length === 0) {
+    return { items, totalVenta, totalCosto, totalGanancia };
+  }
+
+  const productosLista = productosCacheCaja;
+
+  itemsPedido.forEach((itemPedido) => {
+    const nombreProducto = itemPedido.nombre || "";
+    const cantidad = Number(itemPedido.cantidad || 0);
+    const sector = itemPedido.sector || "";
+    const precioPedidoUnitario = Number(itemPedido.precio || 0);
+
+    const productoBase = itemPedido.productoId
+      ? productosLista.find(p => p.id === itemPedido.productoId)
+      : encontrarProductoBasePorNombreVenta(nombreProducto, productosLista);
+
+    const costoUnitario = productoBase ? Number(productoBase.costo || 0) : 0;
+    const precioVentaUnitario = precioPedidoUnitario;
+    const gananciaUnitaria = precioVentaUnitario - costoUnitario;
+
+    const subtotalVenta = precioVentaUnitario * cantidad;
+    const subtotalCosto = costoUnitario * cantidad;
+    const subtotalGanancia = gananciaUnitaria * cantidad;
+
+    totalVenta += subtotalVenta;
+    totalCosto += subtotalCosto;
+    totalGanancia += subtotalGanancia;
+
+    items.push({
+      nombre: nombreProducto,
+      sector: sector,
+      cantidad: cantidad,
+      precioVentaUnitario: precioVentaUnitario,
+      costoUnitario: costoUnitario,
+      gananciaUnitaria: gananciaUnitaria,
+      subtotalVenta: subtotalVenta,
+      subtotalCosto: subtotalCosto,
+      subtotalGanancia: subtotalGanancia,
+      productoBaseId: productoBase ? productoBase.id : null,
+      productoBaseNombre: productoBase ? (productoBase.nombre || "") : ""
+    });
+  });
+
+  return { items, totalVenta, totalCosto, totalGanancia };
+}
+
+db.collection("pedidos")
+  .where("estado.caja", "==", "pendiente")
+  .orderBy("fecha", "desc")
+  .limit(30)
+  .onSnapshot((snapshot) => {
+    contenedor.innerHTML = "";
+
+    if (snapshot.empty) {
+      contenedor.innerHTML = `<div class="panel-card"><p>No hay pedidos pendientes de cobro.</p></div>`;
+      return;
+    }
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      if (!data.estado) return;
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+
+      const comprobanteHTML = data.pago === "transferencia" && data.comprobanteUrl ? `
+        <div style="margin:12px 0;">
+          <p><strong>Comprobante:</strong></p>
+          <a href="${data.comprobanteUrl}" target="_blank">
+            <img src="${data.comprobanteUrl}" style="max-width:240px;width:100%;border-radius:12px;border:1px solid #333;">
+          </a>
+        </div>
+      ` : "";
+
+      let botonHTML = "";
+
+if (data.pago === "transferencia") {
+  botonHTML = `
+    <button onclick="cobrar('${doc.id}')">✅ Confirmar transferencia</button>
+    <button onclick="rechazarPedido('${doc.id}')" style="background:#8b1e1e;margin-left:8px;">❌ Rechazar pedido</button>
+  `;
+} else if (data.pago === "tarjeta") {
+  botonHTML = `
+    <button onclick="cobrar('${doc.id}')">💳 Confirmar tarjeta / POSNET</button>
+    <button onclick="rechazarPedido('${doc.id}')" style="background:#8b1e1e;margin-left:8px;">❌ Rechazar pedido</button>
+  `;
+} else {
+  botonHTML = `
+    <button onclick="cobrar('${doc.id}')">💵 Cobrar efectivo</button>
+    <button onclick="rechazarPedido('${doc.id}')" style="background:#8b1e1e;margin-left:8px;">❌ Rechazar pedido</button>
+  `;
+}
+
+      const tipoEntrega = data.tipoEntrega || "salon";
+
+let iconoEntrega = "🪑";
+let textoEntrega = "SALÓN";
+
+if (tipoEntrega === "retiro") {
+  iconoEntrega = "🛍️";
+  textoEntrega = "RETIRO";
+}
+
+if (tipoEntrega === "delivery") {
+  iconoEntrega = "🛵";
+  textoEntrega = "DELIVERY";
+}
+
+div.innerHTML = `
+  <h3>
+    Pedido ${data.numeroPedido || "-"}
+    ${data.nombreCliente ? " · " + data.nombreCliente : ""}
+  </h3>
+
+  <div style="
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#1f1f1f;
+    border:1px solid #333;
+    border-radius:12px;
+    padding:8px 14px;
+    margin-bottom:12px;
+    font-weight:700;
+    font-size:15px;
+  ">
+    <span style="font-size:20px;">${iconoEntrega}</span>
+    ${textoEntrega}
+  </div>
+
+  <p>Total: $${Number(data.total || 0).toLocaleString("es-AR")}</p>
+  <p>Pago: ${data.pago || "-"}</p>
+  <p>Estado caja: ${data.estado.caja}</p>
+
+  <ul>${renderPedido(data)}</ul>
+
+  ${comprobanteHTML}
+
+  ${botonHTML}
+`;
+
+      contenedor.appendChild(div);
+    });
+  }, (error) => {
+    console.log("ERROR ESCUCHANDO PEDIDOS:", error);
+    contenedor.innerHTML = `<div class="panel-card"><p>Error al cargar pedidos pendientes.</p></div>`;
+  });
+  db.collection("pedidos")
+  .where("estado.caja", "==", "pagado")
+  .orderBy("fecha", "desc")
+  .limit(50)
+  .onSnapshot((snapshot) => {
+
+    contenedorListos.innerHTML = "";
+
+    let encontrados = 0;
+
+    snapshot.forEach((doc) => {
+
+      const data = doc.data();
+
+      if (!data.estado) return;
+      if (data.estado.entregado === true) return;
+
+      const items = obtenerItemsPedido(data);
+
+      let tieneCocina = false;
+      let tieneBebidas = false;
+      let tieneTragos = false;
+
+      items.forEach((item) => {
+        if (item.sector === "cocina") tieneCocina = true;
+        if (item.sector === "bebidas") tieneBebidas = true;
+        if (item.sector === "tragos") tieneTragos = true;
+      });
+
+      const cocinaLista =
+        !tieneCocina || data.estado.cocina === "listo";
+
+      const bebidasListas =
+        !tieneBebidas || data.estado.bebidas === "listo";
+
+      const tragosListos =
+        !tieneTragos || data.estado.tragos === "listo";
+
+      if (!cocinaLista || !bebidasListas || !tragosListos) {
+        return;
+      }
+
+      encontrados++;
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+
+const tipoEntrega = data.tipoEntrega || "salon";
+
+let iconoEntrega = "🪑";
+let textoEntrega = "SALÓN";
+
+if (tipoEntrega === "retiro") {
+  iconoEntrega = "🛍️";
+  textoEntrega = "RETIRO";
+}
+
+if (tipoEntrega === "delivery") {
+  iconoEntrega = "🛵";
+  textoEntrega = "DELIVERY";
+}
+
+div.innerHTML = `
+  <h3>
+    Pedido ${data.numeroPedido || "-"}
+    ${data.nombreCliente ? " · " + data.nombreCliente : ""}
+  </h3>
+
+  <div style="
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#1f1f1f;
+    border:1px solid #333;
+    border-radius:12px;
+    padding:8px 14px;
+    margin-bottom:12px;
+    font-weight:700;
+    font-size:15px;
+  ">
+    <span style="font-size:20px;">
+      ${iconoEntrega}
+    </span>
+    ${textoEntrega}
+  </div>
+
+  <p>✅ LISTO PARA ENTREGAR</p>
+
+  <ul>${renderPedido(data)}</ul>
+
+  <button onclick="marcarEntregado('${doc.id}')">
+    📦 Marcar entregado
+  </button>
+`;
+
+contenedorListos.appendChild(div);
+    });
+
+    if (encontrados === 0) {
+      contenedorListos.innerHTML = `
+        <div class="panel-card">
+          <p>No hay pedidos listos para entregar.</p>
+        </div>
+      `;
+    }
+  });
+
+
+async function cobrar(id) {
+  try {
+    const doc = await db.collection("pedidos").doc(id).get();
+
+    if (!doc.exists) {
+      alert("Pedido no encontrado");
+      return;
+    }
+
+    const data = doc.data();
+
+    if (!data.estado || data.estado.caja !== "pendiente") {
+      alert("Este pedido ya fue procesado");
+      return;
+    }
+
+    const ventaExistente = await db.collection("ventas_caja")
+      .where("pedidoId", "==", id)
+      .limit(1)
+      .get();
+
+    if (!ventaExistente.empty) {
+      alert("Este pedido ya tiene una venta registrada");
+      return;
+    }
+
+    const fechaTexto = obtenerFechaTextoLocal();
+    const detalleGanancia = await construirDetalleGananciaVenta(data);
+    const medioPago = data.pago === "transferencia"
+  ? "transferencia"
+  : data.pago === "tarjeta"
+    ? "tarjeta"
+    : "efectivo";
+
+    await db.collection("pedidos").doc(id).update({
+      "estado.caja": "pagado",
+      estadoPago: "pagado",
+      fechaConfirmacionPago: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await db.collection("ventas_caja").add({
+      pedidoId: id,
+      numeroPedido: data.numeroPedido || 0,
+      nombreCliente: data.nombreCliente || "",
+      total: data.total || 0,
+      medioPago: medioPago,
+      comprobanteUrl: data.comprobanteUrl || null,
+      fecha: firebase.firestore.FieldValue.serverTimestamp(),
+      fechaTexto: fechaTexto,
+      estado: "cobrado",
+      cierreId: null,
+      items: detalleGanancia.items,
+      totalVenta: detalleGanancia.totalVenta,
+      totalCosto: detalleGanancia.totalCosto,
+      totalGanancia: detalleGanancia.totalGanancia
+    });
+
+    console.log("Pago confirmado:", id);
+  } catch (error) {
+    console.log("ERROR AL COBRAR:", error);
+    alert("Error al cobrar");
+  }
+}
+async function rechazarTransferencia(id) {
+  const confirmar = confirm("¿Rechazar este comprobante?");
+  if (!confirmar) return;
+
+  try {
+    await db.collection("pedidos").doc(id).update({
+      estadoPago: "rechazado",
+      "estado.caja": "rechazado",
+      fechaRechazoPago: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log("Transferencia rechazada:", id);
+  } catch (error) {
+    console.log("ERROR AL RECHAZAR TRANSFERENCIA:", error);
+    alert("Error al rechazar transferencia");
+  }
+}
+
+async function rechazarPedido(id) {
+  const confirmar = confirm("¿Rechazar este pedido? Se sacará de pendientes de cobro.");
+  if (!confirmar) return;
+
+  try {
+    await db.collection("pedidos").doc(id).update({
+  estadoPago: "rechazado",
+  "estado.caja": "rechazado",
+
+  "estado.cocina": "cancelado",
+  "estado.bebidas": "cancelado",
+  "estado.tragos": "cancelado",
+
+  pedidoRechazado: true,
+  motivoRechazo: "cancelado_por_caja",
+  fechaRechazoPago: firebase.firestore.FieldValue.serverTimestamp()
+});
+
+    console.log("Pedido rechazado:", id);
+  } catch (error) {
+    console.log("ERROR AL RECHAZAR PEDIDO:", error);
+    alert("Error al rechazar pedido");
+  }
+}
+
+async function sumarProductosAPendienteGeneral(productosNuevos, cierreId, fechaTexto) {
+  const ref = db.collection("pedidos_central").doc("pendiente_general");
+
+  await db.runTransaction(async (transaction) => {
+    const doc = await transaction.get(ref);
+
+    let productosActuales = {};
+
+    if (doc.exists) {
+      const data = doc.data();
+      productosActuales = data.productos || {};
+    }
+
+    for (let producto in productosNuevos) {
+      const cantidadNueva = Number(productosNuevos[producto].cantidad || 0);
+      const sector = productosNuevos[producto].sector || "";
+
+      if (!productosActuales[producto]) {
+        productosActuales[producto] = {
+          cantidad: 0,
+          sector: sector
+        };
+      }
+
+      productosActuales[producto].cantidad += cantidadNueva;
+      productosActuales[producto].sector = sector;
+    }
+
+    transaction.set(ref, {
+      productos: productosActuales,
+      estadoEnvio: "pendiente",
+      ultimoCierreId: cierreId,
+      ultimaFechaTexto: fechaTexto,
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
+}
+async function cerrarCaja() {
+  const nombreCajero = document.getElementById("nombreCajero").value.trim();
+  const montoEnviado = parseFloat(document.getElementById("montoEnviado").value);
+  const fechaTexto = obtenerFechaTextoLocal();
+
+  if (!nombreCajero) {
+    alert("Ingresá el nombre del cajero");
+    return;
+  }
+
+  if (isNaN(montoEnviado) || montoEnviado < 0) {
+    alert("Ingresá el monto enviado");
+    return;
+  }
+
+  try {
+    const snapshotVentas = await db.collection("ventas_caja")
+      .where("cierreId", "==", null)
+      .get();
+
+    if (snapshotVentas.empty) {
+      alert("No hay ventas pendientes para cerrar");
+      return;
+    }
+
+    let totalEfectivo = 0;
+    let totalTransferencia = 0;
+    let totalTarjeta = 0;
+
+    let totalCostoGeneral = 0;
+    let totalGananciaGeneral = 0;
+
+    const ventasPendientes = [];
+    const productosAgrupados = {};
+
+    snapshotVentas.forEach((doc) => {
+      const data = doc.data();
+
+      if (data.medioPago === "transferencia") {
+        totalTransferencia += Number(data.total || 0);
+      } else if (data.medioPago === "tarjeta") {
+        totalTarjeta += Number(data.total || 0);
+      } else {
+        totalEfectivo += Number(data.total || 0);
+      }
+
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      items.forEach((item) => {
+        const nombre = item.nombre || "";
+        if (!nombre) return;
+
+        const cantidad = Number(item.cantidad || 0);
+        const precioUnitario = Number(item.precioVentaUnitario || item.precio || 0);
+
+        const productoBase = item.productoBaseId
+          ? productosCacheCaja.find(p => p.id === item.productoBaseId)
+          : item.productoId
+            ? productosCacheCaja.find(p => p.id === item.productoId)
+            : encontrarProductoBasePorNombreVenta(nombre, productosCacheCaja);
+
+        const costoUnitario = productoBase ? Number(productoBase.costo || 0) : 0;
+        const subtotalCosto = costoUnitario * cantidad;
+        const subtotalGanancia = (precioUnitario - costoUnitario) * cantidad;
+
+        totalCostoGeneral += subtotalCosto;
+        totalGananciaGeneral += subtotalGanancia;
+
+        if (!productosAgrupados[nombre]) {
+          productosAgrupados[nombre] = {
+            cantidad: 0,
+            sector: item.sector || ""
+          };
+        }
+
+        productosAgrupados[nombre].cantidad += cantidad;
+      });
+
+      ventasPendientes.push({
+        id: doc.id,
+        data: data
+      });
+    });
+
+    const cierreRef = await db.collection("cierres_caja").add({
+      fechaTexto,
+      nombreCajero,
+      montoEnviado,
+      totalEfectivoSistema: totalEfectivo,
+      totalTransferenciaSistema: totalTransferencia,
+      totalTarjetaSistema: totalTarjeta,
+      totalGeneralSistema: totalEfectivo + totalTransferencia + totalTarjeta,
+      totalCostoSistema: totalCostoGeneral,
+      totalGananciaSistema: totalGananciaGeneral,
+      montoContadoCentral: null,
+      diferencia: null,
+      estadoControl: "pendiente",
+      fecha: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const promesas = [];
+
+    promesas.push(
+      sumarProductosAPendienteGeneral(
+        productosAgrupados,
+        cierreRef.id,
+        fechaTexto
+      )
+    );
+
+    ventasPendientes.forEach((venta) => {
+      promesas.push(
+        db.collection("ventas_caja").doc(venta.id).update({
+          cierreId: cierreRef.id
+        })
+      );
+    });
+
+    promesas.push(
+      db.collection("configuracion").doc("caja_actual").set({
+        ultimoNumeroPedido: 0
+      }, { merge: true })
+    );
+
+    await Promise.all(promesas);
+
+    alert("Caja cerrada correctamente");
+    document.getElementById("nombreCajero").value = "";
+    document.getElementById("montoEnviado").value = "";
+
+  } catch (error) {
+    console.log("ERROR AL CERRAR CAJA:", error);
+    alert("Error al cerrar caja");
+  }
+}
+async function marcarEntregado(id) {
+
+  const confirmar = confirm("¿Marcar pedido como entregado?");
+  if (!confirmar) return;
+
+  try {
+
+    await db.collection("pedidos").doc(id).update({
+      "estado.entregado": true,
+      fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log("Pedido entregado");
+
+  } catch (error) {
+
+    console.log("ERROR AL MARCAR ENTREGADO:", error);
+    alert("Error al marcar entregado");
+  }
+}
+function cerrarSesion() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+</script>
+
+</body>
+</html>

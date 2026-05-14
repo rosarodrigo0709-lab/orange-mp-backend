@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cocina</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="/manifest-cocina.json">
+  <meta name="theme-color" content="#FF9900">
+
+  <link rel="apple-touch-icon" href="/icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cocina">
+
+  <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">🍔 COCINA</h1>
+      <p class="panel-subtitle">Preparación de pedidos de cocina</p>
+    </div>
+    <div class="panel-badge">Sector</div>
+    <button onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+  </div>
+
+  <div class="panel-section">
+    <h2 class="panel-section-title">Pedidos pagados pendientes</h2>
+    <div id="pedidos"></div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    localStorage.setItem("volverDespuesLogin", "cocina.html");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = user.email || "";
+
+  const usuariosPermitidos = [
+    "cocina@orange.com",
+    "cocina1@orange.com",
+    "admin@orange.com"
+  ];
+
+  if (!usuariosPermitidos.includes(email)) {
+    alert("Acceso denegado. Esta pantalla es solo para cocina.");
+    firebase.auth().signOut();
+    return;
+  }
+
+  console.log("✅ Usuario autorizado cocina:", email);
+});
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+const contenedor = document.getElementById("pedidos");
+
+function obtenerItemsPedido(data) {
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    return data.items;
+  }
+
+  const items = [];
+  const pedidoViejo = data.pedido || {};
+
+  for (let nombre in pedidoViejo) {
+    const item = pedidoViejo[nombre] || {};
+
+    items.push({
+      nombre: nombre,
+      cantidad: Number(item.cantidad || 0),
+      precio: Number(item.precio || 0),
+      subtotal: Number(item.precio || 0) * Number(item.cantidad || 0),
+      sector: item.sector || "",
+      productoId: item.productoId || "",
+      automatico: item.automatico === true
+    });
+  }
+
+  return items;
+}
+
+function renderProductos(data) {
+  const items = obtenerItemsPedido(data);
+
+  let html = "";
+
+  items.forEach((item) => {
+    if (item.sector === "cocina") {
+
+      let nombreMostrar = item.nombre;
+
+      if (item.nombre.startsWith("Pizza")) {
+        nombreMostrar = "🍕 " + item.nombre;
+      }
+
+      if (item.nombre.startsWith("Empanadas")) {
+        nombreMostrar = "🥟 " + item.nombre;
+      }
+
+      html += `<li>${nombreMostrar} x${item.cantidad}</li>`;
+    }
+  });
+
+  return html;
+}
+
+db.collection("pedidos")
+  .where("estado.caja", "==", "pagado")
+  .where("estado.cocina", "in", ["pendiente", "en_preparacion"])
+  .orderBy("fecha", "desc")
+  .limit(50)
+  .onSnapshot((snapshot) => {
+    contenedor.innerHTML = "";
+
+    if (snapshot.empty) {
+      contenedor.innerHTML = `<div class="panel-card"><p>No hay pedidos pendientes de cocina.</p></div>`;
+      return;
+    }
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      if (!data.estado) return;
+
+      const htmlProductos = renderProductos(data);
+      if (!htmlProductos) return;
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+
+      let botones = "";
+      if (data.estado.cocina === "pendiente") {
+        botones = `<button onclick="preparar('${doc.id}')">👨‍🍳 Preparar</button>`;
+      } else if (data.estado.cocina === "en_preparacion") {
+        botones = `<button onclick="listo('${doc.id}')">✅ Listo</button>`;
+      }
+
+      div.innerHTML = `
+        <h3>Pedido ${data.numeroPedido || "-"}${data.nombreCliente ? " · " + data.nombreCliente : ""}</h3>
+        <p>Estado cocina: ${data.estado.cocina}</p>
+        <ul>${htmlProductos}</ul>
+        ${botones}
+      `;
+
+      contenedor.appendChild(div);
+    });
+  }, (error) => {
+    console.log("ERROR ESCUCHANDO COCINA:", error);
+    contenedor.innerHTML = `<div class="panel-card"><p>Error al cargar pedidos de cocina.</p></div>`;
+  });
+
+function preparar(id) {
+  db.collection("pedidos").doc(id).update({
+    "estado.cocina": "en_preparacion"
+  })
+  .then(() => {
+    console.log("Comida en preparación");
+  })
+  .catch((error) => {
+    console.error("Error al marcar comida en preparación:", error);
+    alert("Error al marcar comida en preparación");
+  });
+}
+
+function listo(id) {
+  db.collection("pedidos").doc(id).update({
+    "estado.cocina": "listo"
+  })
+  .then(() => {
+    console.log("Comida lista");
+  })
+  .catch((error) => {
+    console.error("Error al marcar comida lista:", error);
+    alert("Error al marcar comida como lista");
+  });
+}
+function cerrarSesion() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+</script>
+
+</body>
+</html>

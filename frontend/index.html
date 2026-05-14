@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Orange Brewery — Menú Digital</title>
+  <meta name="description" content="Menú digital de Cervecería Orange. Pedí bebidas, tragos y comida rápido desde tu celular.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#FF9900">
+  <link rel="apple-touch-icon" href="/icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Orange Brewery">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══ iOS INSTALL MODAL ═══ -->
+<div class="ios-modal-overlay" id="iosModal">
+  <div class="ios-modal">
+    <h3><span class="material-symbols-rounded" style="color:#fff; font-size:1.6rem;">phone_iphone</span> Agregar a Inicio</h3>
+    <div class="ios-step">
+      <div class="ios-step-num">1</div>
+      <div class="ios-step-text">Abrí esta página en <strong>Safari</strong></div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">2</div>
+      <div class="ios-step-text">Tocá el botón <strong>Compartir</strong> <span class="material-symbols-rounded" style="font-size:1rem;">ios_share</span></div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">3</div>
+      <div class="ios-step-text">Elegí <strong>"Agregar a pantalla de inicio"</strong></div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">4</div>
+      <div class="ios-step-text">Abrí la app desde el <strong>ícono</strong> que se creó</div>
+    </div>
+    <div class="ios-step" style="border-bottom:none;">
+      <div class="ios-step-num">5</div>
+      <div class="ios-step-text">Las notificaciones se activan solas al abrir la app</div>
+    </div>
+    <button class="ios-modal-close" onclick="cerrarModalIOS()">Entendido</button>
+  </div>
+</div>
+
+<!-- ═══ PAYMENT MODAL ═══ -->
+<div class="pay-modal-overlay" id="payModal">
+  <div class="pay-modal">
+    <h3>Elegí método de pago</h3>
+
+    <div class="pay-modal-cliente">
+  <label
+  for="nombreCliente"
+  id="labelCliente"
+  style="font-size:22px;font-weight:800;margin-bottom:12px;display:block;"
+>
+  Mesa / Retiro / Delivery
+</label>
+
+<select
+  id="tipoEntregaCliente"
+  onchange="actualizarTextoEntregaCliente()"
+  style="width:100%;height:64px;border-radius:18px;padding:0 20px;font-size:22px;box-sizing:border-box;margin-bottom:14px;"
+>
+</select>
+
+<input
+  type="text"
+  id="nombreCliente"
+  placeholder="Ej: Mesa 5"
+  style="width:100%;height:70px;border-radius:18px;padding:0 20px;font-size:26px;box-sizing:border-box;"
+>
+</div>
+
+<div style="margin:25px 0;text-align:center;">
+  <div style="font-size:20px;color:#aaa;margin-bottom:8px;">Importe total</div>
+  <div id="importePedidoTexto" style="font-size:44px;font-weight:900;color:#ff9800;">$0</div>
+</div>
+
+    <div class="pay-modal-transfer">
+      <h4>Transferencia</h4>
+      <p><strong>Alias:</strong> <span id="aliasTransferenciaCliente">ORANGE.24</span></p>
+      <p><strong>CVU:</strong> <span id="cvuTransferenciaCliente">0000003100073058856505</span></p>
+
+      <label for="comprobanteTransferencia">Subí el comprobante</label>
+      <input type="file" id="comprobanteTransferencia" accept="image/*">
+
+      <button class="pay-modal-btn" onclick="pagarTransferencia()">
+        <span class="material-symbols-rounded">account_balance</span> Ya transferí
+      </button>
+    </div>
+
+   <button class="pay-modal-btn" onclick="pagarEfectivo()">
+  <span class="material-symbols-rounded">payments</span> Pago en efectivo
+</button>
+
+<button class="pay-modal-btn" onclick="pagarTarjeta()">
+  <span class="material-symbols-rounded">credit_card</span> Pago con tarjeta
+</button>
+
+<button class="pay-modal-cancel" onclick="cerrarPago()">Cancelar</button>
+  </div>
+</div>
+<!-- ═══ MINI CART OVERLAY ═══ -->
+<div class="minicart-overlay" id="minicartOverlay" onclick="cerrarMiniCart()"></div>
+
+<!-- ═══ MINI CART DRAWER ═══ -->
+<div class="minicart" id="minicart">
+  <div class="minicart-handle"></div>
+  <div class="minicart-header">
+    <h3><span class="material-symbols-rounded" style="color:var(--primary);">shopping_cart</span> Tu Pedido</h3>
+    <button class="minicart-close" onclick="cerrarMiniCart()"><span class="material-symbols-rounded">close</span></button>
+  </div>
+  <div class="minicart-items" id="minicartItems"></div>
+  <div class="minicart-footer">
+    <div class="minicart-total">
+      <span class="minicart-total-label">Total</span>
+      <span class="minicart-total-value" id="minicartTotal">$0</span>
+    </div>
+    <button class="btn-pagar" onclick="mostrarPago()">
+      <span class="material-symbols-rounded">shopping_bag</span> Confirmar Pedido
+    </button>
+  </div>
+</div>
+
+<!-- ═══ FLOATING CART BUTTON ═══ -->
+<button class="floating-cart" id="floatingCart" onclick="abrirMiniCart()">
+  <span class="material-symbols-rounded">shopping_cart</span>
+  <span class="cart-badge" id="cartBadge">0</span>
+  <span class="cart-total-label" id="cartTotalLabel"></span>
+</button>
+
+<!-- ═══════════════════════════════════════════════════
+     APP CONTAINER
+     ═══════════════════════════════════════════════════ -->
+<div class="app-container">
+
+<!-- HERO -->
+<header class="hero-header">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <img src="assets/logo.png" alt="Logo" class="hero-logo" id="logoCliente">
+    <h1 id="nombreNegocioCliente">Orange Brewery</h1>
+    <p class="hero-subtitle" id="subtituloNegocioCliente">Bebidas · Tragos · Cocina</p>
+  </div>
+</header>
+
+<!-- BEER BANNER -->
+<div class="beer-banner">
+ <img id="imagenPortadaCliente" src="assets/portada/cervezas-frias.png" alt="Portada" loading="lazy">
+</div>
+
+<!-- PROMO BANNER -->
+<div class="beer-banner" id="promoBannerCliente" style="display:none;">
+  <img id="imagenPromoCliente" src="" alt="Promoción" loading="lazy">
+  <div id="mensajePromoCliente" style="
+    padding:14px 18px;
+    font-size:18px;
+    font-weight:800;
+    color:#fff;
+    text-align:center;
+  "></div>
+</div>
+
+<!-- NOTIFICATION BUTTON -->
+<div class="notif-section">
+  <button class="btn-notificaciones" id="btnNotif" onclick="activarNotificaciones()">
+    <span class="material-symbols-rounded">notifications_active</span>
+    <span id="btnNotifText">Activar Notificaciones</span>
+  </button>
+  <div class="notif-status" id="estadoNotificaciones"></div>
+</div>
+
+<!-- ORDER STATUS BANNER -->
+<div class="order-status-banner" id="orderBanner">
+  <div class="order-number" id="numeroPedido"></div>
+  <div class="order-status-text">
+    <span class="status-dot"></span>
+    <span id="estadoCliente">Armando pedido</span>
+  </div>
+</div>
+
+<!-- ═══ CATEGORY TABS DINÁMICOS ═══ -->
+<div class="category-tabs" id="categoryTabs"></div>
+
+<!-- ═══ MENÚ DINÁMICO ═══ -->
+<div id="menuSectionsContainer"></div>
+
+<!-- ═══ NOTIFICATIONS ═══ -->
+<div class="notifications-section" id="notifSection">
+  <h3><span class="material-symbols-rounded" style="color:var(--primary);">notifications</span> Notificaciones</h3>
+  <div id="notificacionesLista" class="notificaciones-lista"></div>
+</div>
+
+</div> <!-- Cierre app-container -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+db.collection("configuracion_cliente").doc("actual")
+  .onSnapshot((doc) => {
+    if (!doc.exists) return;
+
+    const data = doc.data();
+
+    const nombre = document.getElementById("nombreNegocioCliente");
+    const subtitulo = document.getElementById("subtituloNegocioCliente");
+    const portada = document.getElementById("imagenPortadaCliente");
+    const alias = document.getElementById("aliasTransferenciaCliente");
+    const cvu = document.getElementById("cvuTransferenciaCliente");
+    const logo = document.getElementById("logoCliente");
+    const btnNotifText = document.getElementById("btnNotifText");
+    const promoBanner = document.getElementById("promoBannerCliente");
+    const imagenPromoCliente = document.getElementById("imagenPromoCliente");
+    const mensajePromoCliente = document.getElementById("mensajePromoCliente");
+    const tabBebidas = document.querySelector('[data-cat="bebidas"]');
+    const tabTragos = document.querySelector('[data-cat="tragos"]');
+    const tabCocina = document.querySelector('[data-cat="cocina"]');
+    const seccionBebidas = document.getElementById("bebidas");
+    const seccionTragos = document.getElementById("tragos");
+    const seccionCocina = document.getElementById("cocina");
+
+    if (nombre && data.nombreNegocio) {
+      nombre.textContent = data.nombreNegocio;
+      document.title = data.nombreNegocio + " — Menú Digital";
+    }
+
+    if (subtitulo && data.subtituloNegocio) {
+      subtitulo.textContent = data.subtituloNegocio;
+    }
+
+    if (portada && data.imagenPortada) {
+      portada.src = data.imagenPortada;
+    }
+
+    if (alias && data.aliasTransferencia) {
+      alias.textContent = data.aliasTransferencia;
+    }
+
+    if (cvu && data.cvuTransferencia) {
+      cvu.textContent = data.cvuTransferencia;
+    }
+    if (logo) {
+  logo.src = data.logoCliente || "assets/logo.png";
+}
+
+if (btnNotifText) {
+  btnNotifText.textContent = data.textoBotonNotificaciones || "Activar Notificaciones";
+}
+if (promoBanner) {
+  const tienePromo = data.mensajePromo || data.imagenPromo;
+
+  promoBanner.style.display = tienePromo ? "block" : "none";
+
+  if (imagenPromoCliente && data.imagenPromo) {
+    imagenPromoCliente.src = data.imagenPromo;
+    imagenPromoCliente.style.display = "block";
+  } else if (imagenPromoCliente) {
+    imagenPromoCliente.style.display = "none";
+  }
+
+  if (mensajePromoCliente && data.mensajePromo) {
+    mensajePromoCliente.textContent = data.mensajePromo;
+    mensajePromoCliente.style.display = "block";
+  } else if (mensajePromoCliente) {
+    mensajePromoCliente.style.display = "none";
+  }
+}
+
+if (tabBebidas) tabBebidas.style.display = data.mostrarBebidas === false ? "none" : "";
+if (tabTragos) tabTragos.style.display = data.mostrarTragos === false ? "none" : "";
+if (tabCocina) tabCocina.style.display = data.mostrarCocina === false ? "none" : "";
+
+if (seccionBebidas) seccionBebidas.style.display = data.mostrarBebidas === false ? "none" : "";
+if (seccionTragos) seccionTragos.style.display = data.mostrarTragos === false ? "none" : "";
+if (seccionCocina) seccionCocina.style.display = data.mostrarCocina === false ? "none" : "";
+
+    if (data.colorPrincipal) {
+      document.documentElement.style.setProperty("--primary", data.colorPrincipal);
+      document.documentElement.style.setProperty("--color-principal", data.colorPrincipal);
+    }
+
+    configurarModosVentaCliente(data.modosVenta || {});
+  });
+  let modosVentaClienteActuales = {};
+
+function configurarModosVentaCliente(modos) {
+  modosVentaClienteActuales = modos || {};
+
+  const select = document.getElementById("tipoEntregaCliente");
+  if (!select) return;
+
+  select.innerHTML = "";
+
+  if (modosVentaClienteActuales.salon === true) {
+    select.innerHTML += `<option value="salon">Consumir en el lugar</option>`;
+  }
+
+  if (modosVentaClienteActuales.retiro === true) {
+    select.innerHTML += `<option value="retiro">Retirar en el local</option>`;
+  }
+
+  if (modosVentaClienteActuales.delivery === true) {
+    select.innerHTML += `<option value="delivery">Delivery / Envío</option>`;
+  }
+
+  if (!select.innerHTML.trim()) {
+    select.innerHTML = `<option value="salon">Consumir en el lugar</option>`;
+  }
+
+  if (select.options.length <= 1) {
+    select.style.display = "none";
+  } else {
+    select.style.display = "block";
+  }
+
+  actualizarTextoEntregaCliente();
+}
+
+function actualizarTextoEntregaCliente() {
+  const select = document.getElementById("tipoEntregaCliente");
+  const label = document.getElementById("labelCliente");
+  const input = document.getElementById("nombreCliente");
+
+  if (!select || !label || !input) return;
+
+  const tipo = select.value;
+
+  if (tipo === "salon") {
+    label.textContent = "Número de mesa";
+    input.placeholder = "Ej: Mesa 5";
+  }
+
+  if (tipo === "retiro") {
+    label.textContent = "Nombre para retirar";
+    input.placeholder = "Ej: Rodrigo";
+  }
+
+  if (tipo === "delivery") {
+    label.textContent = "Nombre + dirección + teléfono";
+    input.placeholder = "Ej: Rodrigo - Av. Mitre 120 - 3755...";
+  }
+}
+</script>
+
+<script src="script.js"></script>
+</body>
+</html>

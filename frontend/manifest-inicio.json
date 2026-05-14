@@ -1,0 +1,21 @@
+{
+  "name": "Orange Panel",
+  "short_name": "Orange",
+  "start_url": "/inicio.html",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#FF9900",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/iconos/icono-inicio-orange.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/iconos/icono-inicio-orange.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

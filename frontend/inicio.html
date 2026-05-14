@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Orange</title>
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0,
+        maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="/manifest-inicio.json">
+
+  <link rel="icon" href="assets/iconos/icono-inicio-orange.png">
+  <link rel="apple-touch-icon" href="assets/iconos/icono-inicio-orange.png">
+
+  <meta name="theme-color" content="#FF9900">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Orange Panel">
+  <meta name="mobile-web-app-capable" content="yes">
+</head>
+
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">🍊 ORANGE</h1>
+      <p class="panel-subtitle">Panel principal de operación</p>
+    </div>
+    <div class="panel-badge">Inicio</div>
+  </div>
+
+  <div class="panel-section">
+    <h2 class="panel-section-title">Ingresar a un sector</h2>
+
+    <div class="panel-card">
+      <button onclick="irA('caja.html')">💵 Caja</button>
+      <button onclick="irA('caja_movil.html')">📱 Caja móvil</button>
+
+      <div id="botonesSectoresProduccion"></div>
+
+      <button onclick="irA('cierre.html')">🔒 Cierres</button>
+      <button onclick="irA('admin.html')">⚙️ Administración</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.auth().onAuthStateChanged((user) => {
+  console.log("Usuario actual:", user ? user.email : "sin sesión");
+});
+
+function irA(pagina) {
+  localStorage.setItem("volverDespuesLogin", pagina);
+  window.location.href = "login.html";
+}
+
+function obtenerEmojiSector(sector) {
+  const clave = String(sector.clave || "").toLowerCase();
+  const nombre = String(sector.nombre || "").toLowerCase();
+
+  if (clave.includes("cocina") || nombre.includes("cocina")) return "🍔";
+  if (clave.includes("bebida") || nombre.includes("bebida")) return "🧃";
+  if (clave.includes("trago") || nombre.includes("trago")) return "🍹";
+  if (clave.includes("helad") || nombre.includes("helad")) return "🍦";
+  if (clave.includes("cafe") || nombre.includes("cafe") || nombre.includes("cafeter")) return "☕";
+  if (clave.includes("pan") || nombre.includes("pan")) return "🥐";
+
+  return "🏭";
+}
+
+function cargarSectoresProduccion() {
+  const contenedor = document.getElementById("botonesSectoresProduccion");
+
+  db.collection("sectores_produccion")
+    .where("activo", "==", true)
+    .onSnapshot((snapshot) => {
+      const sectores = [];
+
+      snapshot.forEach((doc) => {
+        sectores.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      sectores.sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+
+      contenedor.innerHTML = "";
+
+      if (sectores.length === 0) {
+        contenedor.innerHTML = `<p style="color:#999;">No hay sectores de producción activos.</p>`;
+        return;
+      }
+
+      sectores.forEach((sector) => {
+        const clave = sector.clave;
+        const nombre = sector.nombre || clave;
+        const emoji = obtenerEmojiSector(sector);
+
+        if (!clave) return;
+
+        const boton = document.createElement("button");
+        boton.textContent = `${emoji} ${nombre}`;
+        boton.onclick = () => irA(`sector.html?sector=${clave}`);
+
+        contenedor.appendChild(boton);
+      });
+    }, (error) => {
+      console.log("ERROR AL CARGAR SECTORES PRODUCCIÓN:", error);
+      contenedor.innerHTML = `<p style="color:#f87171;">Error al cargar sectores.</p>`;
+    });
+}
+
+cargarSectoresProduccion();
+</script>
+
+</body>
+</html>

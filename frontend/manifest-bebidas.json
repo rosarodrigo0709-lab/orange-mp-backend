@@ -1,0 +1,20 @@
+{
+  "name": "Bebidas Orange",
+  "short_name": "Bebidas",
+  "start_url": "/bebidas.html",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#FF9900",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

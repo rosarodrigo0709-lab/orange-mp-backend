@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Caja móvil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="/manifest-caja-movil.json">
+  <meta name="theme-color" content="#FF9900">
+
+  <link rel="apple-touch-icon" href="/icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Caja móvil">
+
+  <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body class="panel-body">
+
+<div class="panel-container">
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">📱 CAJA MÓVIL</h1>
+      <p class="panel-subtitle">Cobro de pedidos en mesa</p>
+    </div>
+    <div class="panel-badge">Orange Brewery</div>
+    <button onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+  </div>
+  <div class="panel-section" style="margin-bottom:20px;">
+  <label>Nombre caja móvil:</label>
+  <input type="text" id="nombreCajaMovil" placeholder="Ej: Rodrigo">
+</div>
+
+  <div class="panel-section">
+    <h2 class="panel-section-title">Pedidos de clientes para cobrar</h2>
+    <div id="pedidos"></div>
+  </div>
+
+</div>
+<div class="panel-divider"></div>
+
+<div class="cierre-box">
+  <h2 class="panel-section-title">🔒 Cerrar caja móvil</h2>
+
+  <div class="panel-form-row">
+    <div>
+      <label for="montoEntregado">Monto entregado:</label>
+      <input type="number" id="montoEntregado" placeholder="Ej: 50000">
+    </div>
+  </div>
+
+  <div class="cierre-actions">
+    <button onclick="cerrarCajaMovil()">📦 Cerrar caja móvil</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    localStorage.setItem("volverDespuesLogin", "caja_movil.html");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = user.email || "";
+
+  const usuariosPermitidos = [
+    "caja_movil1@orange.com",
+    "caja_movil2@orange.com",
+    "caja_movil3@orange.com",
+    "caja_movil4@orange.com",
+    "caja_movil5@orange.com",
+    "admin@orange.com"
+  ];
+
+  if (!usuariosPermitidos.includes(email)) {
+    alert("Acceso denegado. Esta pantalla es solo para caja móvil.");
+    firebase.auth().signOut();
+    return;
+  }
+
+  console.log("✅ Usuario autorizado caja móvil:", email);
+});
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+const contenedor = document.getElementById("pedidos");
+const inputCajaMovil = document.getElementById("nombreCajaMovil");
+
+inputCajaMovil.value = localStorage.getItem("nombreCajaMovil") || "";
+
+inputCajaMovil.addEventListener("change", () => {
+  localStorage.setItem("nombreCajaMovil", inputCajaMovil.value.trim());
+});
+
+function obtenerItemsPedido(data) {
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    return data.items;
+  }
+
+  const items = [];
+  const pedidoViejo = data.pedido || {};
+
+  for (let nombre in pedidoViejo) {
+    const item = pedidoViejo[nombre] || {};
+
+    items.push({
+      nombre: nombre,
+      cantidad: Number(item.cantidad || 0),
+      precio: Number(item.precio || 0),
+      subtotal: Number(item.precio || 0) * Number(item.cantidad || 0),
+      sector: item.sector || "",
+      productoId: item.productoId || "",
+      automatico: item.automatico === true
+    });
+  }
+
+  return items;
+}
+
+function renderPedido(data) {
+  const items = obtenerItemsPedido(data);
+  let html = "";
+
+  items.forEach((item) => {
+    html += `<li>${item.nombre} x${item.cantidad}</li>`;
+  });
+
+  return html;
+}
+
+db.collection("pedidos")
+  .where("estado.caja", "==", "pendiente")
+  .orderBy("fecha", "desc")
+  .limit(30)
+  .onSnapshot((snapshot) => {
+    contenedor.innerHTML = "";
+
+    if (snapshot.empty) {
+      contenedor.innerHTML = `<div class="panel-card"><p>No hay pedidos pendientes de cobro.</p></div>`;
+      return;
+    }
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (!data.estado) return;
+
+      const div = document.createElement("div");
+      div.className = "panel-card";
+
+      const comprobanteHTML = data.pago === "transferencia" && data.comprobanteUrl ? `
+        <div style="margin:12px 0;">
+          <p><strong>Comprobante:</strong></p>
+          <a href="${data.comprobanteUrl}" target="_blank">
+            <img src="${data.comprobanteUrl}" style="max-width:240px;width:100%;border-radius:12px;border:1px solid #333;">
+          </a>
+        </div>
+      ` : "";
+
+      let botonHTML = "";
+
+      if (data.pago === "transferencia") {
+
+  botonHTML = `
+    <button onclick="aprobarPagoMovil('${doc.id}')">
+      ✅ Confirmar transferencia
+    </button>
+
+    <button 
+      onclick="rechazarPedido('${doc.id}')"
+      style="background:#8b1e1e;margin-left:8px;">
+      ❌ Rechazar pedido
+    </button>
+  `;
+
+} else if (data.pago === "tarjeta") {
+
+  botonHTML = `
+    <button onclick="aprobarPagoMovil('${doc.id}')">
+      💳 Confirmar tarjeta / POSNET
+    </button>
+
+    <button 
+      onclick="rechazarPedido('${doc.id}')"
+      style="background:#8b1e1e;margin-left:8px;">
+      ❌ Rechazar pedido
+    </button>
+  `;
+
+} else {
+
+  botonHTML = `
+    <button onclick="aprobarPagoMovil('${doc.id}')">
+      💵 Cobrar efectivo
+    </button>
+
+    <button 
+      onclick="rechazarPedido('${doc.id}')"
+      style="background:#8b1e1e;margin-left:8px;">
+      ❌ Rechazar pedido
+    </button>
+  `;
+}
+
+      const tipoEntrega = data.tipoEntrega || "salon";
+
+let iconoEntrega = "🪑";
+let textoEntrega = "SALÓN";
+
+if (tipoEntrega === "retiro") {
+  iconoEntrega = "🛍️";
+  textoEntrega = "RETIRO";
+}
+
+if (tipoEntrega === "delivery") {
+  iconoEntrega = "🛵";
+  textoEntrega = "DELIVERY";
+}
+
+div.innerHTML = `
+  <h3>
+    Pedido ${data.numeroPedido || "-"}
+    ${data.nombreCliente ? " · " + data.nombreCliente : ""}
+  </h3>
+
+  <div style="
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#1f1f1f;
+    border:1px solid #333;
+    border-radius:12px;
+    padding:8px 14px;
+    margin-bottom:12px;
+    font-weight:700;
+    font-size:15px;
+  ">
+    <span style="font-size:20px;">${iconoEntrega}</span>
+    ${textoEntrega}
+  </div>
+
+  <p>Total: $${Number(data.total || 0).toLocaleString("es-AR")}</p>
+  <p>Pago: ${data.pago || "-"}</p>
+  <p>Estado caja: ${data.estado.caja}</p>
+
+  <ul>${renderPedido(data)}</ul>
+
+  ${comprobanteHTML}
+  ${botonHTML}
+`;
+
+      contenedor.appendChild(div);
+    });
+    }, (error) => {
+    console.log("ERROR ESCUCHANDO CAJA MÓVIL:", error);
+    contenedor.innerHTML = `<div class="panel-card"><p>Error al cargar pedidos pendientes.</p></div>`;
+  });
+function obtenerFechaTextoLocal() {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+async function aprobarPagoMovil(id) {
+  const confirmar = confirm("¿Confirmar este pago?");
+  if (!confirmar) return;
+
+  try {
+    const nombreCajaMovil = document.getElementById("nombreCajaMovil").value.trim();
+
+    if (!nombreCajaMovil) {
+      alert("Ingresá el nombre de la caja móvil");
+      return;
+    }
+
+    const pedidoRef = db.collection("pedidos").doc(id);
+    const pedidoDoc = await pedidoRef.get();
+
+    if (!pedidoDoc.exists) {
+      alert("Pedido no encontrado");
+      return;
+    }
+
+    const data = pedidoDoc.data();
+
+    if (!data.estado || data.estado.caja !== "pendiente") {
+      alert("Este pedido ya fue procesado");
+      return;
+    }
+
+    const ventaExistente = await db.collection("ventas_caja")
+      .where("pedidoId", "==", id)
+      .limit(1)
+      .get();
+
+    if (!ventaExistente.empty) {
+      alert("Este pedido ya tiene venta registrada");
+      return;
+    }
+    if (data.estadoPago === "pagado") {
+        alert("Este pedido ya fue cobrado");
+        return;
+    }
+    const itemsPedido = obtenerItemsPedido(data);
+    const fechaTexto = obtenerFechaTextoLocal();
+
+    const medioPago = data.pago === "transferencia"
+      ? "transferencia"
+      : data.pago === "tarjeta"
+        ? "tarjeta"
+        : "efectivo";
+
+    const itemsVenta = itemsPedido.map((item) => {
+      const subtotalVenta = Number(item.precio || 0) * Number(item.cantidad || 0);
+
+      return {
+        nombre: item.nombre || "",
+        sector: item.sector || "",
+        cantidad: Number(item.cantidad || 0),
+        precioVentaUnitario: Number(item.precio || 0),
+        costoUnitario: null,
+        gananciaUnitaria: null,
+        subtotalVenta: subtotalVenta,
+        subtotalCosto: null,
+        subtotalGanancia: null,
+        productoBaseId: item.productoId || null,
+        productoBaseNombre: item.nombre || ""
+      };
+    });
+
+    await pedidoRef.update({
+      "estado.caja": "pagado",
+      estadoPago: "pagado",
+      cobradoPorCajaMovil: true,
+      nombreCajaMovil: nombreCajaMovil,
+      cierreCajaMovilId: null,
+      fechaConfirmacionPago: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await db.collection("ventas_caja").add({
+      pedidoId: id,
+      numeroPedido: data.numeroPedido || 0,
+      nombreCliente: data.nombreCliente || "",
+      total: Number(data.total || 0),
+      medioPago: medioPago,
+      comprobanteUrl: data.comprobanteUrl || null,
+
+      cobradoPorCajaMovil: true,
+      nombreCajaMovil: nombreCajaMovil,
+      cierreCajaMovilId: null,
+
+      fecha: firebase.firestore.FieldValue.serverTimestamp(),
+      fechaTexto: fechaTexto,
+      estado: "cobrado",
+      cierreId: null,
+
+      items: itemsVenta,
+      totalVenta: Number(data.total || 0),
+      totalCosto: null,
+      totalGanancia: null
+    });
+
+    alert("Pago confirmado correctamente.");
+
+  } catch (error) {
+    console.log("ERROR AL APROBAR PAGO MÓVIL:", error);
+    alert("Error al confirmar pago");
+  }
+}
+
+async function rechazarTransferencia(id) {
+  const confirmar = confirm("¿Rechazar este comprobante?");
+  if (!confirmar) return;
+
+  try {
+
+    await db.collection("pedidos").doc(id).update({
+      estadoPago: "rechazado",
+      "estado.caja": "rechazado",
+      fechaRechazoPago: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    alert("Transferencia rechazada");
+
+  } catch (error) {
+    console.log("ERROR AL RECHAZAR TRANSFERENCIA:", error);
+    alert("Error al rechazar transferencia");
+  }
+}
+async function cerrarCajaMovil() {
+
+  const nombreCajaMovil = document.getElementById("nombreCajaMovil").value.trim();
+  const montoEntregado = Number(document.getElementById("montoEntregado").value || 0);
+
+  if (!nombreCajaMovil) {
+    alert("Ingresá el nombre de la caja móvil");
+    return;
+  }
+
+  try {
+    const snapshot = await db.collection("ventas_caja")
+      .where("cobradoPorCajaMovil", "==", true)
+      .where("nombreCajaMovil", "==", nombreCajaMovil)
+      .where("cierreCajaMovilId", "==", null)
+      .get();
+
+    let totalEfectivo = 0;
+    let totalTransferencia = 0;
+    let totalTarjeta = 0;
+    let cantidadVentas = 0;
+
+    const ventasActualizar = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      cantidadVentas++;
+
+      if (data.medioPago === "transferencia") {
+        totalTransferencia += Number(data.total || 0);
+      } else if (data.medioPago === "tarjeta") {
+        totalTarjeta += Number(data.total || 0);
+      } else {
+        totalEfectivo += Number(data.total || 0);
+      }
+
+      ventasActualizar.push(doc.id);
+    });
+
+    if (cantidadVentas === 0) {
+      alert("No hay ventas pendientes para cerrar en esta caja móvil");
+      return;
+    }
+
+    const cierreRef = await db.collection("cierres_cajas_moviles").add({
+      nombreCajaMovil,
+      cantidadVentas,
+      totalEfectivo,
+      totalTransferencia,
+      totalTarjeta,
+      totalGeneral: totalEfectivo + totalTransferencia + totalTarjeta,
+      montoEntregado,
+      diferencia: montoEntregado - totalEfectivo,
+      fecha: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const promesas = [];
+
+    ventasActualizar.forEach((ventaId) => {
+      promesas.push(
+        db.collection("ventas_caja").doc(ventaId).update({
+          cierreCajaMovilId: cierreRef.id,
+          cierreCajaMovilFecha: firebase.firestore.FieldValue.serverTimestamp()
+        })
+      );
+    });
+
+    await Promise.all(promesas);
+
+    alert("Caja móvil cerrada correctamente");
+
+    document.getElementById("montoEntregado").value = "";
+
+  } catch (error) {
+    console.log("ERROR CIERRE CAJA MOVIL:", error);
+    alert("Error al cerrar caja móvil");
+  }
+}
+function cerrarSesion() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+async function rechazarPedido(id) {
+
+  const confirmar = confirm("¿Rechazar este pedido?");
+  if (!confirmar) return;
+
+  try {
+
+    await db.collection("pedidos").doc(id).update({
+  estadoPago: "rechazado",
+  "estado.caja": "rechazado",
+
+  "estado.cocina": "cancelado",
+  "estado.bebidas": "cancelado",
+  "estado.tragos": "cancelado",
+
+  pedidoRechazado: true,
+  fechaRechazoPago: firebase.firestore.FieldValue.serverTimestamp()
+});
+
+    alert("Pedido rechazado");
+
+  } catch (error) {
+
+    console.log("ERROR AL RECHAZAR PEDIDO:", error);
+    alert("Error al rechazar pedido");
+  }
+}
+</script>
+
+</body>
+</html>

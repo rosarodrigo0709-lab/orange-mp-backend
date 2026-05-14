@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Control central</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">📋 CONTROL CENTRAL</h1>
+      <p class="panel-subtitle">Control de cierres, pedidos consolidados y productos</p>
+    </div>
+    <div class="panel-badge">Orange Brewery</div>
+    <button onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+  </div>
+
+  <div class="cierre-actions">
+    <button id="btnTabCierres" onclick="mostrarSeccion('cierres')">CIERRES</button>
+    <button id="btnTabPedidos" class="btn-secundario" onclick="mostrarSeccion('pedidos')">PEDIDOS</button>
+    <button id="btnTabProductos" class="btn-secundario" onclick="mostrarSeccion('productos')">PRODUCTOS</button>
+    <button id="btnTabGanancias" class="btn-secundario" onclick="mostrarSeccion('ganancias')">GANANCIAS</button>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <div id="seccionCierres" class="panel-section" style="display:block;">
+    <h2 class="panel-section-title">🔒 Cierres pendientes de controlar</h2>
+    <div id="listaCierres"></div>
+  </div>
+
+  <div id="seccionPedidos" class="panel-section" style="display:none;">
+    <h2 class="panel-section-title">📦 Pedidos pendientes de mandar</h2>
+    <div id="listaPedidos"></div>
+  </div>
+
+  <div id="seccionProductos" class="panel-section" style="display:none;">
+    <h2 class="panel-section-title">🛒 Gestión de productos</h2>
+
+    <div class="panel-card" style="margin-bottom:20px;">
+      <h3 id="tituloFormularioProducto">Nuevo producto</h3>
+
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="productoNombre">Nombre</label>
+          <input type="text" id="productoNombre" placeholder="Ej: Heineken 1L">
+        </div>
+
+        <div>
+          <div>
+  <label for="productoSectorMenu">
+    Sector del menú
+  </label>
+
+  <select id="productoSectorMenu">
+    <option value="">
+      Seleccionar sector
+    </option>
+  </select>
+</div>
+
+<div>
+  <label for="productoSectorProduccion">
+    Sector producción
+  </label>
+
+  <select id="productoSectorProduccion">
+    <option value="">
+      Seleccionar sector producción
+    </option>
+  </select>
+</div>
+        </div>
+      </div>
+
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="productoCategoria">Categoría</label>
+          <select id="productoCategoria">
+            <option value="">Seleccionar categoría</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="productoActivo">Estado</label>
+          <select id="productoActivo">
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="productoCosto">Costo</label>
+          <input type="number" id="productoCosto" placeholder="Ej: 3200">
+        </div>
+
+        <div>
+          <label for="productoPrecioVenta">Precio de venta</label>
+          <input type="number" id="productoPrecioVenta" placeholder="Ej: 6500">
+        </div>
+      </div>
+
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="productoUsaSelectorSabores">¿Usa selector de sabores?</label>
+          <select id="productoUsaSelectorSabores">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="productoPermiteMitadMitad">¿Permite mitad y mitad?</label>
+          <select id="productoPermiteMitadMitad">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="wrapSaboresProducto" class="panel-card" style="margin-top:16px; display:none; padding:16px;">
+        <h4 style="margin-bottom:12px;">🍓 Sabores del producto</h4>
+
+        <div class="panel-form-row">
+          <div>
+            <label for="nuevoSaborProducto">Nuevo sabor</label>
+            <input type="text" id="nuevoSaborProducto" placeholder="Ej: Muzzarella">
+          </div>
+
+          <div style="display:flex; align-items:end;">
+            <button type="button" onclick="agregarSaborProducto()">➕ Agregar sabor</button>
+          </div>
+        </div>
+
+        <div id="listaSaboresProducto" style="margin-top:16px;"></div>
+      </div>
+
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="productoAuto">¿Se agrega automáticamente?</label>
+          <select id="productoAuto">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="tipoAuto">Tipo</label>
+          <select id="tipoAuto" disabled>
+            <option value="una_vez">Una vez</option>
+            <option value="por_unidad">Por unidad</option>
+            <option value="cada_cantidad">Cada X unidades</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="wrapAutoConfig" class="panel-card" style="margin-top:16px; display:none; padding:16px;">
+        <h4 style="margin-bottom:12px;">⚙️ Configuración automática</h4>
+
+        <div class="panel-form-row">
+          <div>
+            <label for="cantidadAuto">Cantidad base</label>
+            <input type="number" id="cantidadAuto" placeholder="Ej: 4">
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Productos que lo activan</label>
+          <div id="listaProductosDisparadores" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <label for="productoImagen">Imagen del producto</label>
+        <input type="file" id="productoImagen" accept="image/*">
+      </div>
+
+      <div id="previewImagenWrap" style="margin-top:16px; display:none;">
+        <p style="margin-bottom:10px;">Vista previa</p>
+        <img id="previewImagen" src="" alt="Vista previa" style="max-width:220px; border-radius:16px; border:1px solid rgba(255,255,255,0.08);">
+      </div>
+
+      <div class="cierre-actions" style="margin-top:20px;">
+        <button id="btnGuardarProducto" onclick="guardarProducto()">💾 Guardar producto</button>
+        <button id="btnCancelarEdicion" class="btn-secundario" onclick="cancelarEdicionProducto()" style="display:none;">❌ Cancelar edición</button>
+      </div>
+    </div>
+
+    <div class="panel-card" style="margin-bottom:20px;">
+      <h3>Publicación del menú</h3>
+      <p style="margin-top:10px;">Cuando termines de editar, publicá la actualización. La carta de clientes usará esa versión fija hasta la próxima publicación.</p>
+
+      <div class="cierre-actions" style="margin-top:20px;">
+        <button id="btnPublicarActualizacion" onclick="publicarActualizacionMenu()">🚀 Publicar actualización</button>
+      </div>
+
+      <div id="estadoPublicacionMenu" style="margin-top:16px;"></div>
+      <div id="infoMenuPublicado" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="panel-card">
+      <h3>Listado de productos</h3>
+
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="filtroSectorProductos">Filtrar por sector</label>
+          <select id="filtroSectorProductos" onchange="aplicarFiltroProductos()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="buscadorProductos">Buscar por nombre</label>
+          <input type="text" id="buscadorProductos" placeholder="Buscar producto..." oninput="aplicarFiltroProductos()">
+        </div>
+      </div>
+
+      <div id="listaProductos" style="margin-top:20px;"></div>
+    </div>
+  </div>
+
+  <div id="seccionGanancias" class="panel-section" style="display:none;">
+    <h2 class="panel-section-title">📈 Ganancias</h2>
+
+    <div class="panel-card" style="margin-bottom:20px;">
+      <div class="panel-form-row" style="margin-top:16px;">
+        <div>
+          <label for="filtroFechaGanancias">Fecha</label>
+          <input type="date" id="filtroFechaGanancias">
+        </div>
+
+        <div>
+          <label for="filtroSectorGanancias">Sector</label>
+          <select id="filtroSectorGanancias">
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cierre-actions" style="margin-top:20px;">
+        <button onclick="cargarGanancias()">📊 Ver ganancias</button>
+      </div>
+    </div>
+
+    <div id="resumenGanancias" class="panel-stats" style="display:none; margin-bottom:20px;">
+      <div class="stat-card">
+        <div class="stat-label">Venta total</div>
+        <div class="stat-value orange" id="gananciaVentaTotal">$0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Costo total</div>
+        <div class="stat-value red" id="gananciaCostoTotal">$0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Ganancia total</div>
+        <div class="stat-value green" id="gananciaTotal">$0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Items vendidos</div>
+        <div class="stat-value blue" id="gananciaItemsTotal">0</div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <h3>Detalle por producto</h3>
+      <div id="detalleGanancias"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    localStorage.setItem("volverDespuesLogin", "cierre.html");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = user.email || "";
+
+  const usuariosPermitidos = [
+    "cierre@orange.com",
+    "admin@orange.com"
+  ];
+
+  if (!usuariosPermitidos.includes(email)) {
+    alert("Acceso denegado. Esta pantalla es solo para cierres.");
+    firebase.auth().signOut();
+    return;
+  }
+
+  console.log("✅ Usuario autorizado cierres:", email);
+});
+
+firebase.firestore().enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+    console.log("Persistencia offline no disponible:", err);
+  });
+
+const storage = firebase.storage();
+
+const listaCierres = document.getElementById("listaCierres");
+const listaPedidos = document.getElementById("listaPedidos");
+const listaProductos = document.getElementById("listaProductos");
+const productoNombre = document.getElementById("productoNombre");
+const productoSectorMenu = document.getElementById("productoSectorMenu");
+const productoSectorProduccion = document.getElementById("productoSectorProduccion");
+const productoCategoria = document.getElementById("productoCategoria");
+const productoCosto = document.getElementById("productoCosto");
+const productoPrecioVenta = document.getElementById("productoPrecioVenta");
+const productoActivo = document.getElementById("productoActivo");
+const productoImagen = document.getElementById("productoImagen");
+const previewImagen = document.getElementById("previewImagen");
+const previewImagenWrap = document.getElementById("previewImagenWrap");
+const tituloFormularioProducto = document.getElementById("tituloFormularioProducto");
+const btnCancelarEdicion = document.getElementById("btnCancelarEdicion");
+const productoUsaSelectorSabores = document.getElementById("productoUsaSelectorSabores");
+const productoPermiteMitadMitad = document.getElementById("productoPermiteMitadMitad");
+const wrapSaboresProducto = document.getElementById("wrapSaboresProducto");
+const nuevoSaborProducto = document.getElementById("nuevoSaborProducto");
+const listaSaboresProducto = document.getElementById("listaSaboresProducto");
+const btnPublicarActualizacion = document.getElementById("btnPublicarActualizacion");
+const estadoPublicacionMenu = document.getElementById("estadoPublicacionMenu");
+const infoMenuPublicado = document.getElementById("infoMenuPublicado");
+const productoAuto = document.getElementById("productoAuto");
+const tipoAuto = document.getElementById("tipoAuto");
+const wrapAutoConfig = document.getElementById("wrapAutoConfig");
+const cantidadAuto = document.getElementById("cantidadAuto");
+const listaProductosDisparadores = document.getElementById("listaProductosDisparadores");
+
+let productoEditandoId = null;
+let imagenActualUrl = "";
+let productosCache = [];
+let saboresProducto = [];
+let productosDisparadoresSeleccionados = [];
+
+let sectoresMenuCache = [];
+let sectoresProduccionCache = [];
+
+function obtenerFechaTextoLocal() {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
+function formatearFechaHoraLocal(fecha) {
+  if (!fecha) return "-";
+
+  let fechaJS = fecha;
+
+  if (typeof fecha.toDate === "function") {
+    fechaJS = fecha.toDate();
+  }
+
+  if (!(fechaJS instanceof Date) || isNaN(fechaJS.getTime())) {
+    return "-";
+  }
+
+  return fechaJS.toLocaleString("es-AR");
+}
+
+function escaparHTML(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escaparJS(texto) {
+  return String(texto || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'");
+}
+
+function normalizarClaveMenu(texto) {
+  return String(texto || "")
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function actualizarSelectoresSectores() {
+  const sectoresMenuActivos = sectoresMenuCache
+    .filter(s => s.activo !== false)
+    .sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+
+  const valorMenuActual = productoSectorMenu.value;
+
+  productoSectorMenu.innerHTML = `<option value="">Seleccionar sector del menú</option>`;
+
+  sectoresMenuActivos.forEach((sector) => {
+    const clave = normalizarClaveMenu(sector.clave || sector.nombre);
+    const option = document.createElement("option");
+    option.value = clave;
+    option.textContent = sector.nombre || clave;
+    productoSectorMenu.appendChild(option);
+  });
+
+  if (valorMenuActual) productoSectorMenu.value = valorMenuActual;
+
+  const filtroProductos = document.getElementById("filtroSectorProductos");
+  if (filtroProductos) {
+    const valorFiltro = filtroProductos.value;
+    filtroProductos.innerHTML = `<option value="">Todos</option>`;
+
+    sectoresMenuActivos.forEach((sector) => {
+      const clave = normalizarClaveMenu(sector.clave || sector.nombre);
+      const option = document.createElement("option");
+      option.value = clave;
+      option.textContent = sector.nombre || clave;
+      filtroProductos.appendChild(option);
+    });
+
+    if (valorFiltro) filtroProductos.value = valorFiltro;
+  }
+}
+
+function actualizarSelectoresProduccion() {
+  const sectoresActivos = sectoresProduccionCache
+    .filter(s => s.activo !== false)
+    .sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+
+  const valorActual = productoSectorProduccion.value;
+
+  productoSectorProduccion.innerHTML = `<option value="">Seleccionar sector producción</option>`;
+
+  sectoresActivos.forEach((sector) => {
+    const clave = normalizarClaveMenu(sector.clave || sector.nombre);
+    const option = document.createElement("option");
+    option.value = clave;
+    option.textContent = sector.nombre || clave;
+    productoSectorProduccion.appendChild(option);
+  });
+
+  if (valorActual) productoSectorProduccion.value = valorActual;
+
+  const filtroGanancias = document.getElementById("filtroSectorGanancias");
+  if (filtroGanancias) {
+    const valorFiltro = filtroGanancias.value;
+    filtroGanancias.innerHTML = `<option value="">Todos</option>`;
+
+    sectoresActivos.forEach((sector) => {
+      const clave = normalizarClaveMenu(sector.clave || sector.nombre);
+      const option = document.createElement("option");
+      option.value = clave;
+      option.textContent = sector.nombre || clave;
+      filtroGanancias.appendChild(option);
+    });
+
+    if (valorFiltro) filtroGanancias.value = valorFiltro;
+  }
+}
+
+function actualizarCategoriasPorSector(categoriaSeleccionada = "") {
+  const sectorSeleccionado = productoSectorMenu.value;
+
+  productoCategoria.innerHTML = `<option value="">Seleccionar categoría</option>`;
+
+  if (!sectorSeleccionado) return;
+
+  const sector = sectoresMenuCache.find((s) => {
+    const clave = normalizarClaveMenu(s.clave || s.nombre);
+    return clave === sectorSeleccionado;
+  });
+
+  if (!sector || !Array.isArray(sector.categorias)) return;
+
+  const categoriasActivas = sector.categorias
+  .map(c => typeof c === "string" ? { nombre: c } : c)
+  .filter(c => c.activa !== false)
+  .sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+
+  categoriasActivas.forEach((categoria) => {
+    const claveCategoria = normalizarClaveMenu(categoria.clave || categoria.nombre);
+    const option = document.createElement("option");
+    option.value = claveCategoria;
+    option.textContent = categoria.nombre || claveCategoria;
+    productoCategoria.appendChild(option);
+  });
+
+  if (categoriaSeleccionada) {
+    productoCategoria.value = normalizarClaveMenu(categoriaSeleccionada);
+  }
+}
+
+function renderSaboresProducto() {
+  listaSaboresProducto.innerHTML = "";
+
+  if (saboresProducto.length === 0) {
+    listaSaboresProducto.innerHTML = `<p style="color:#999;">Todavía no cargaste sabores.</p>`;
+    return;
+  }
+
+  saboresProducto.forEach((sabor, index) => {
+    const item = document.createElement("div");
+    item.className = "panel-card";
+    item.style.marginBottom = "10px";
+    item.style.padding = "12px";
+
+    item.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div><strong>${escaparHTML(sabor)}</strong></div>
+        <button type="button" class="btn-secundario" onclick="eliminarSaborProducto(${index})">🗑️ Eliminar</button>
+      </div>
+    `;
+
+    listaSaboresProducto.appendChild(item);
+  });
+}
+
+function agregarSaborProducto() {
+  const sabor = nuevoSaborProducto.value.trim();
+
+  if (!sabor) {
+    alert("Ingresá un sabor");
+    return;
+  }
+
+  const yaExiste = saboresProducto.some(s => s.toLowerCase() === sabor.toLowerCase());
+  if (yaExiste) {
+    alert("Ese sabor ya fue cargado");
+    return;
+  }
+
+  saboresProducto.push(sabor);
+  nuevoSaborProducto.value = "";
+  renderSaboresProducto();
+  actualizarOpcionesEspecialesProducto();
+}
+
+function eliminarSaborProducto(index) {
+  saboresProducto.splice(index, 1);
+  renderSaboresProducto();
+  actualizarOpcionesEspecialesProducto();
+}
+
+function renderProductosDisparadores() {
+  listaProductosDisparadores.innerHTML = "";
+
+  const productosDisponibles = productosCache.filter((producto) => {
+    if (!producto) return false;
+    if (productoEditandoId && producto.id === productoEditandoId) return false;
+    return true;
+  });
+
+  if (productosDisponibles.length === 0) {
+    listaProductosDisparadores.innerHTML = `<p style="color:#999;">Todavía no hay otros productos para seleccionar.</p>`;
+    return;
+  }
+
+  productosDisponibles.forEach((producto) => {
+    const id = producto.id;
+    const nombre = producto.nombre || "";
+    const checked = productosDisparadoresSeleccionados.includes(id);
+
+    const item = document.createElement("label");
+    item.style.display = "flex";
+    item.style.alignItems = "center";
+    item.style.gap = "12px";
+    item.style.padding = "10px 12px";
+    item.style.marginBottom = "8px";
+    item.style.border = "1px solid rgba(255,255,255,0.08)";
+    item.style.borderRadius = "12px";
+    item.style.background = "rgba(255,255,255,0.03)";
+    item.style.color = "#fff";
+    item.style.cursor = "pointer";
+
+    item.innerHTML = `
+      <input
+        type="checkbox"
+        style="width:18px; height:18px; flex:0 0 18px;"
+        ${checked ? "checked" : ""}
+        onchange="toggleProductoDisparador('${escaparJS(id)}')"
+      >
+      <span style="color:#fff; font-size:15px; line-height:1.3;">${escaparHTML(nombre)}</span>
+    `;
+
+    listaProductosDisparadores.appendChild(item);
+  });
+}
+
+function toggleProductoDisparador(id) {
+  if (productosDisparadoresSeleccionados.includes(id)) {
+    productosDisparadoresSeleccionados = productosDisparadoresSeleccionados.filter(p => p !== id);
+  } else {
+    productosDisparadoresSeleccionados.push(id);
+  }
+}
+
+function actualizarOpcionesEspecialesProducto() {
+  const usaSelector = productoUsaSelectorSabores.value === "true";
+  const esAutomatico = productoAuto.value === "true";
+
+  wrapSaboresProducto.style.display = usaSelector ? "block" : "none";
+  wrapAutoConfig.style.display = esAutomatico ? "block" : "none";
+  tipoAuto.disabled = !esAutomatico;
+  cantidadAuto.disabled = !esAutomatico;
+
+  if (!usaSelector) {
+    productoPermiteMitadMitad.value = "false";
+    productoPermiteMitadMitad.disabled = true;
+    saboresProducto = [];
+    renderSaboresProducto();
+  } else {
+    productoPermiteMitadMitad.disabled = saboresProducto.length < 2;
+
+    if (saboresProducto.length < 2) {
+      productoPermiteMitadMitad.value = "false";
+    }
+  }
+
+  if (!esAutomatico) {
+    tipoAuto.value = "una_vez";
+    cantidadAuto.value = "";
+    productosDisparadoresSeleccionados = [];
+  }
+
+  renderProductosDisparadores();
+}
+
+function mostrarEstadoPublicacion(texto, tipo = "normal") {
+  let color = "#ddd";
+
+  if (tipo === "ok") color = "#22c55e";
+  if (tipo === "error") color = "#ef4444";
+  if (tipo === "info") color = "#60a5fa";
+  if (tipo === "warning") color = "#f59e0b";
+
+  estadoPublicacionMenu.innerHTML = `<p style="color:${color}; font-weight:600;">${escaparHTML(texto)}</p>`;
+}
+
+function renderInfoMenuPublicado(data) {
+  if (!data) {
+    infoMenuPublicado.innerHTML = `<p>No hay menú publicado todavía.</p>`;
+    return;
+  }
+
+  const cantidadProductos = Array.isArray(data.productos) ? data.productos.length : 0;
+  const version = data.version || 1;
+  const fecha = formatearFechaHoraLocal(data.fechaPublicacion || data.fechaActualizacion);
+
+  infoMenuPublicado.innerHTML = `
+    <p><strong>Versión publicada:</strong> ${version}</p>
+    <p><strong>Productos publicados:</strong> ${cantidadProductos}</p>
+    <p><strong>Última publicación:</strong> ${fecha}</p>
+  `;
+}
+
+async function cargarInfoMenuPublicado() {
+  try {
+    const doc = await db.collection("menu_publicado").doc("actual").get();
+
+    if (!doc.exists) {
+      renderInfoMenuPublicado(null);
+      return;
+    }
+
+    renderInfoMenuPublicado(doc.data());
+  } catch (error) {
+    console.log("ERROR AL CARGAR INFO DEL MENÚ PUBLICADO:", error);
+    infoMenuPublicado.innerHTML = `<p>Error al cargar info del menú publicado.</p>`;
+  }
+}
+
+async function publicarActualizacionMenu() {
+  try {
+    btnPublicarActualizacion.disabled = true;
+    mostrarEstadoPublicacion("Publicando actualización...", "info");
+
+    const snapshotProductos = await db.collection("productos").where("activo", "==", true).get();
+
+    const productosActivos = [];
+    snapshotProductos.forEach((doc) => {
+      productosActivos.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    productosActivos.sort((a, b) => {
+      const sectorA = String(a.sectorMenu || a.sector || "");
+      const sectorB = String(b.sectorMenu || b.sector || "");
+      if (sectorA !== sectorB) return sectorA.localeCompare(sectorB, "es");
+
+      const categoriaA = String(a.categoria || "");
+      const categoriaB = String(b.categoria || "");
+      if (categoriaA !== categoriaB) return categoriaA.localeCompare(categoriaB, "es");
+
+      return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es");
+    });
+
+    const docMenu = await db.collection("menu_publicado").doc("actual").get();
+    let versionNueva = 1;
+
+    if (docMenu.exists) {
+      const dataActual = docMenu.data();
+      versionNueva = Number(dataActual.version || 0) + 1;
+    }
+
+    await db.collection("menu_publicado").doc("actual").set({
+      version: versionNueva,
+      productos: productosActivos,
+      cantidadProductos: productosActivos.length,
+      fechaPublicacion: firebase.firestore.FieldValue.serverTimestamp(),
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    mostrarEstadoPublicacion(`Menú publicado correctamente. Versión ${versionNueva}`, "ok");
+    await cargarInfoMenuPublicado();
+  } catch (error) {
+    console.log("ERROR AL PUBLICAR ACTUALIZACIÓN:", error);
+    mostrarEstadoPublicacion("Error al publicar la actualización del menú", "error");
+    alert("Error al publicar la actualización");
+  } finally {
+    btnPublicarActualizacion.disabled = false;
+  }
+}
+
+productoSectorMenu.addEventListener("change", () => {
+  actualizarCategoriasPorSector();
+});
+
+productoUsaSelectorSabores.addEventListener("change", () => {
+  actualizarOpcionesEspecialesProducto();
+});
+
+productoAuto.addEventListener("change", () => {
+  actualizarOpcionesEspecialesProducto();
+});
+
+function mostrarSeccion(seccion) {
+  document.getElementById("seccionCierres").style.display = seccion === "cierres" ? "block" : "none";
+  document.getElementById("seccionPedidos").style.display = seccion === "pedidos" ? "block" : "none";
+  document.getElementById("seccionProductos").style.display = seccion === "productos" ? "block" : "none";
+  document.getElementById("seccionGanancias").style.display = seccion === "ganancias" ? "block" : "none";
+
+  document.getElementById("btnTabCierres").className = seccion === "cierres" ? "" : "btn-secundario";
+  document.getElementById("btnTabPedidos").className = seccion === "pedidos" ? "" : "btn-secundario";
+  document.getElementById("btnTabProductos").className = seccion === "productos" ? "" : "btn-secundario";
+  document.getElementById("btnTabGanancias").className = seccion === "ganancias" ? "" : "btn-secundario";
+}
+
+function renderPedidoDetalle(productos, pedidoId) {
+  let html = "";
+
+  for (let producto in productos) {
+    const cantidad = productos[producto].cantidad || 0;
+
+    html += `
+      <div class="panel-card" style="margin-bottom:10px; padding:12px;">
+        <label style="display:block; font-weight:bold; margin-bottom:8px;">
+          ${producto}
+        </label>
+
+        <input 
+          type="number" 
+          id="mandar-${pedidoId}-${producto.replace(/[^a-zA-Z0-9]/g, "_")}" 
+          value="${cantidad}" 
+          min="0"
+          style="width:100%; font-size:22px; padding:10px;"
+        >
+      </div>
+    `;
+  }
+
+  return html;
+}
+
+productoImagen.addEventListener("change", () => {
+  const archivo = productoImagen.files[0];
+
+  if (!archivo) {
+    if (!imagenActualUrl) {
+      previewImagenWrap.style.display = "none";
+      previewImagen.src = "";
+    }
+    return;
+  }
+
+  const lector = new FileReader();
+  lector.onload = function(e) {
+    previewImagen.src = e.target.result;
+    previewImagenWrap.style.display = "block";
+  };
+  lector.readAsDataURL(archivo);
+});
+
+function limpiarFormularioProducto() {
+  productoNombre.value = "";
+  productoSectorMenu.value = "";
+  productoSectorProduccion.value = "";
+  productoCategoria.innerHTML = `<option value="">Seleccionar categoría</option>`;
+  productoCategoria.value = "";
+  productoCosto.value = "";
+  productoPrecioVenta.value = "";
+  productoActivo.value = "true";
+  productoUsaSelectorSabores.value = "false";
+  productoPermiteMitadMitad.value = "false";
+  productoPermiteMitadMitad.disabled = true;
+  productoAuto.value = "false";
+  tipoAuto.value = "una_vez";
+  tipoAuto.disabled = true;
+  cantidadAuto.value = "";
+  cantidadAuto.disabled = true;
+  productoImagen.value = "";
+  previewImagen.src = "";
+  previewImagenWrap.style.display = "none";
+  productoEditandoId = null;
+  imagenActualUrl = "";
+  saboresProducto = [];
+  productosDisparadoresSeleccionados = [];
+  nuevoSaborProducto.value = "";
+  tituloFormularioProducto.textContent = "Nuevo producto";
+  btnCancelarEdicion.style.display = "none";
+  renderSaboresProducto();
+  renderProductosDisparadores();
+  actualizarOpcionesEspecialesProducto();
+}
+
+function cancelarEdicionProducto() {
+  limpiarFormularioProducto();
+}
+
+async function subirImagenProducto(archivo) {
+  const nombreArchivo = `productos/${Date.now()}_${archivo.name.replace(/\s+/g, "_")}`;
+  const ref = storage.ref().child(nombreArchivo);
+  await ref.put(archivo);
+  return await ref.getDownloadURL();
+}
+
+async function guardarProducto() {
+  const nombre = productoNombre.value.trim();
+  const sectorMenu = productoSectorMenu.value;
+  const sectorProduccion = productoSectorProduccion.value;
+  const categoria = productoCategoria.value.trim();
+  const costo = parseFloat(productoCosto.value);
+  const precioVenta = parseFloat(productoPrecioVenta.value);
+  const activo = productoActivo.value === "true";
+  const usaSelectorSabores = productoUsaSelectorSabores.value === "true";
+  const permiteMitadMitad = usaSelectorSabores && productoPermiteMitadMitad.value === "true";
+  const esAutomatico = productoAuto.value === "true";
+  const tipoAutoValor = tipoAuto.value;
+  const cantidadAutoValor = parseInt(cantidadAuto.value) || 1;
+  const archivoImagen = productoImagen.files[0];
+
+  if (!nombre) {
+    alert("Ingresá el nombre del producto");
+    return;
+  }
+
+  if (!sectorMenu) {
+  alert("Seleccioná el sector del menú");
+  return;
+}
+
+if (!sectorProduccion) {
+  alert("Seleccioná el sector de producción");
+  return;
+}
+
+  if (!categoria) {
+    alert("Seleccioná una categoría");
+    return;
+  }
+
+  if (isNaN(costo) || costo < 0) {
+    alert("Ingresá un costo válido");
+    return;
+  }
+
+  if (isNaN(precioVenta) || precioVenta < 0) {
+    alert("Ingresá un precio de venta válido");
+    return;
+  }
+
+  if (usaSelectorSabores && saboresProducto.length === 0) {
+    alert("Cargá al menos un sabor");
+    return;
+  }
+
+  if (permiteMitadMitad && saboresProducto.length < 2) {
+    alert("Para vender mitad y mitad necesitás al menos 2 sabores");
+    return;
+  }
+
+  if (esAutomatico && productosDisparadoresSeleccionados.length === 0) {
+    alert("Seleccioná al menos un producto disparador");
+    return;
+  }
+
+  if (esAutomatico && tipoAutoValor === "cada_cantidad" && (!cantidadAutoValor || cantidadAutoValor < 1)) {
+    alert("Ingresá una cantidad base válida");
+    return;
+  }
+
+  try {
+    let imagenUrlFinal = imagenActualUrl || "";
+
+    if (archivoImagen) {
+      imagenUrlFinal = await subirImagenProducto(archivoImagen);
+    }
+
+    const dataProducto = {
+      nombre: nombre,
+      nombreBusqueda: nombre.toLowerCase(),
+      sector: sectorMenu,
+      sectorMenu: sectorMenu,
+      sectorProduccion: sectorProduccion,
+      categoria: categoria,
+      costo: costo,
+      precioVenta: precioVenta,
+      activo: activo,
+      imagenUrl: imagenUrlFinal,
+      usaSelectorSabores: usaSelectorSabores,
+      permiteMitadMitad: permiteMitadMitad,
+      sabores: usaSelectorSabores ? [...saboresProducto] : [],
+      seAgregaAutomaticamente: esAutomatico,
+      tipoAutoAgregado: esAutomatico ? tipoAutoValor : null,
+      cantidadAutoAgregado: esAutomatico ? cantidadAutoValor : null,
+      productosDisparadores: esAutomatico ? [...productosDisparadoresSeleccionados] : [],
+      fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (productoEditandoId) {
+      await db.collection("productos").doc(productoEditandoId).update(dataProducto);
+      alert("Producto actualizado correctamente");
+    } else {
+      dataProducto.fechaCreacion = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection("productos").add(dataProducto);
+      alert("Producto agregado correctamente");
+    }
+
+    limpiarFormularioProducto();
+  } catch (error) {
+    console.log("ERROR AL GUARDAR PRODUCTO:", error);
+    alert("Error al guardar producto");
+  }
+}
+
+function editarProducto(id) {
+  const producto = productosCache.find(p => p.id === id);
+  if (!producto) return;
+
+  productoEditandoId = id;
+  imagenActualUrl = producto.imagenUrl || "";
+
+  productoNombre.value = producto.nombre || "";
+  productoSectorMenu.value = normalizarClaveMenu(producto.sectorMenu || producto.sector || "");
+  productoSectorProduccion.value = normalizarClaveMenu(producto.sectorProduccion || producto.sector || "");
+  actualizarCategoriasPorSector(producto.categoria || "");
+  productoCosto.value = producto.costo ?? "";
+  productoPrecioVenta.value = producto.precioVenta ?? "";
+  productoActivo.value = producto.activo === false ? "false" : "true";
+  productoUsaSelectorSabores.value = producto.usaSelectorSabores === true ? "true" : "false";
+  productoPermiteMitadMitad.value = producto.permiteMitadMitad === true ? "true" : "false";
+  productoAuto.value = producto.seAgregaAutomaticamente === true ? "true" : "false";
+  tipoAuto.value = producto.tipoAutoAgregado || "una_vez";
+  cantidadAuto.value = producto.cantidadAutoAgregado || "";
+  saboresProducto = Array.isArray(producto.sabores) ? [...producto.sabores] : [];
+  productosDisparadoresSeleccionados = Array.isArray(producto.productosDisparadores) ? [...producto.productosDisparadores] : [];
+
+  renderSaboresProducto();
+  renderProductosDisparadores();
+  actualizarOpcionesEspecialesProducto();
+
+  if (imagenActualUrl) {
+    previewImagen.src = imagenActualUrl;
+    previewImagenWrap.style.display = "block";
+  } else {
+    previewImagen.src = "";
+    previewImagenWrap.style.display = "none";
+  }
+
+  tituloFormularioProducto.textContent = "Editar producto";
+  btnCancelarEdicion.style.display = "inline-block";
+  mostrarSeccion("productos");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function eliminarProducto(id) {
+  const confirmar = confirm("¿Seguro que querés eliminar este producto?");
+  if (!confirmar) return;
+
+  try {
+    await db.collection("productos").doc(id).delete();
+    alert("Producto eliminado correctamente");
+    if (productoEditandoId === id) {
+      limpiarFormularioProducto();
+    }
+  } catch (error) {
+    console.log("ERROR AL ELIMINAR PRODUCTO:", error);
+    alert("Error al eliminar producto");
+  }
+}
+
+function aplicarFiltroProductos() {
+  const filtroSector = document.getElementById("filtroSectorProductos").value;
+  const buscador = document.getElementById("buscadorProductos").value.trim().toLowerCase();
+
+  let productosFiltrados = [...productosCache];
+
+  if (filtroSector) {
+    productosFiltrados = productosFiltrados.filter(p =>
+  (p.sectorMenu || p.sector || "") === filtroSector
+);
+  }
+
+  if (buscador) {
+    productosFiltrados = productosFiltrados.filter(p =>
+      (p.nombre || "").toLowerCase().includes(buscador)
+    );
+  }
+
+  renderListaProductos(productosFiltrados);
+}
+
+function renderListaProductos(lista) {
+  listaProductos.innerHTML = "";
+
+  if (lista.length === 0) {
+    listaProductos.innerHTML = `<div class="panel-card"><p>No hay productos cargados.</p></div>`;
+    return;
+  }
+
+  lista.forEach((producto) => {
+    const div = document.createElement("div");
+    div.className = "panel-card";
+    div.style.marginBottom = "16px";
+
+    const saboresTexto = Array.isArray(producto.sabores) && producto.sabores.length > 0
+      ? producto.sabores.join(", ")
+      : "-";
+
+    const autoTexto = producto.seAgregaAutomaticamente === true ? "Sí" : "No";
+    const tipoAutoTexto = producto.tipoAutoAgregado || "-";
+    const cantidadAutoTexto = producto.cantidadAutoAgregado || "-";
+
+    let disparadoresTexto = "-";
+    if (Array.isArray(producto.productosDisparadores) && producto.productosDisparadores.length > 0) {
+      const nombresDisparadores = producto.productosDisparadores.map((idDisparador) => {
+        const prod = productosCache.find(p => p.id === idDisparador);
+        return prod ? prod.nombre : "(producto eliminado)";
+      });
+      disparadoresTexto = nombresDisparadores.join(", ");
+    }
+
+    div.innerHTML = `
+      <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+        <div style="flex:0 0 120px;">
+          ${producto.imagenUrl
+            ? `<img src="${producto.imagenUrl}" alt="${producto.nombre}" style="width:120px; height:120px; object-fit:cover; border-radius:16px; border:1px solid rgba(255,255,255,0.08);">`
+            : `<div style="width:120px; height:120px; display:flex; align-items:center; justify-content:center; border-radius:16px; border:1px solid rgba(255,255,255,0.08); color:#999;">Sin imagen</div>`
+          }
+        </div>
+
+        <div style="flex:1; min-width:260px;">
+          <h3>${producto.nombre || "-"}</h3>
+          <p>Sector menú: ${producto.sectorMenu || producto.sector || "-"}</p>
+          <p>Categoría menú: ${producto.categoria || "-"}</p>
+          <p>Sector producción: ${producto.sectorProduccion || producto.sector || "-"}</p>
+          <p>Costo: $${producto.costo || 0}</p>
+          <p>Precio venta: $${producto.precioVenta || 0}</p>
+          <p>Estado: ${producto.activo === false ? "Inactivo" : "Activo"}</p>
+          <p>Usa selector de sabores: ${producto.usaSelectorSabores === true ? "Sí" : "No"}</p>
+          <p>Permite mitad y mitad: ${producto.permiteMitadMitad === true ? "Sí" : "No"}</p>
+          <p>Sabores: ${saboresTexto}</p>
+          <p>Se agrega automáticamente: ${autoTexto}</p>
+          <p>Tipo automático: ${tipoAutoTexto}</p>
+          <p>Cantidad base automática: ${cantidadAutoTexto}</p>
+          <p>Se activa con: ${disparadoresTexto}</p>
+
+          <div class="cierre-actions" style="margin-top:14px;">
+            <button onclick="editarProducto('${producto.id}')">✏️ Editar</button>
+            <button class="btn-secundario" onclick="eliminarProducto('${producto.id}')">🗑️ Eliminar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    listaProductos.appendChild(div);
+  });
+}
+
+async function cargarGanancias() {
+  const fechaFiltro = document.getElementById("filtroFechaGanancias").value || obtenerFechaTextoLocal();
+  const sectorFiltro = document.getElementById("filtroSectorGanancias").value;
+  const resumenGanancias = document.getElementById("resumenGanancias");
+  const detalleGanancias = document.getElementById("detalleGanancias");
+
+  try {
+    const snapshotVentas = await db.collection("ventas_caja")
+  .where("fechaTexto", "==", fechaFiltro)
+  .get();
+
+    let totalVenta = 0;
+    let totalCosto = 0;
+    let totalGanancia = 0;
+    let totalItems = 0;
+    const detallePorProducto = {};
+
+    function procesarSnapshot(snapshot) {
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const items = data.items || [];
+
+        items.forEach((item) => {
+          if (sectorFiltro && item.sector !== sectorFiltro) return;
+
+          totalVenta += Number(item.subtotalVenta || 0);
+          totalCosto += Number(item.subtotalCosto || 0);
+          totalGanancia += Number(item.subtotalGanancia || 0);
+          totalItems += Number(item.cantidad || 0);
+
+          if (!detallePorProducto[item.nombre]) {
+            detallePorProducto[item.nombre] = {
+              nombre: item.nombre,
+              sector: item.sector,
+              cantidad: 0,
+              venta: 0,
+              costo: 0,
+              ganancia: 0
+            };
+          }
+
+          detallePorProducto[item.nombre].cantidad += Number(item.cantidad || 0);
+          detallePorProducto[item.nombre].venta += Number(item.subtotalVenta || 0);
+          detallePorProducto[item.nombre].costo += Number(item.subtotalCosto || 0);
+          detallePorProducto[item.nombre].ganancia += Number(item.subtotalGanancia || 0);
+        });
+      });
+    }
+
+procesarSnapshot(snapshotVentas);
+
+    document.getElementById("gananciaVentaTotal").textContent = `$${totalVenta}`;
+    document.getElementById("gananciaCostoTotal").textContent = `$${totalCosto}`;
+    document.getElementById("gananciaTotal").textContent = `$${totalGanancia}`;
+    document.getElementById("gananciaItemsTotal").textContent = totalItems;
+
+    resumenGanancias.style.display = "grid";
+    detalleGanancias.innerHTML = "";
+
+    const productos = Object.values(detallePorProducto).sort((a, b) => b.ganancia - a.ganancia);
+
+    if (productos.length === 0) {
+      detalleGanancias.innerHTML = `<div class="panel-card"><p>No hay ganancias para ese filtro.</p></div>`;
+      return;
+    }
+
+    productos.forEach((producto) => {
+      const div = document.createElement("div");
+      div.className = "panel-card";
+      div.style.marginBottom = "16px";
+
+      div.innerHTML = `
+        <h3>${producto.nombre}</h3>
+        <p>Sector: ${producto.sector}</p>
+        <p>Cantidad vendida: ${producto.cantidad}</p>
+        <p>Venta total: $${producto.venta}</p>
+        <p>Costo total: $${producto.costo}</p>
+        <p>Ganancia total: $${producto.ganancia}</p>
+      `;
+
+      detalleGanancias.appendChild(div);
+    });
+  } catch (error) {
+    console.log("ERROR AL CARGAR GANANCIAS:", error);
+    alert("Error al cargar ganancias");
+  }
+}
+
+db.collection("cierres_caja")
+  .where("estadoControl", "==", "pendiente")
+  .orderBy("fecha", "desc")
+  .limit(50)
+  .onSnapshot((snapshot) => {
+    listaCierres.innerHTML = "";
+
+    if (snapshot.empty) {
+      listaCierres.innerHTML = `<div class="panel-card"><p>No hay cierres pendientes.</p></div>`;
+      return;
+    }
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const div = document.createElement("div");
+      div.className = "panel-card";
+
+      div.innerHTML = `
+        <h3>Fecha: ${data.fechaTexto || "-"}</h3>
+        <p>Cajero: ${data.nombreCajero || "-"}</p>
+        <p>Efectivo sistema: $${data.totalEfectivoSistema || 0}</p>
+        <p>Transferencia sistema: $${data.totalTransferenciaSistema || 0}</p>
+<p>Tarjeta sistema: $${data.totalTarjetaSistema || 0}</p>
+<p>Total sistema: $${data.totalGeneralSistema || 0}</p>
+        <p>Monto enviado: $${data.montoEnviado || 0}</p>
+
+        <div style="margin-top:16px;">
+          <label for="contado-${doc.id}">Monto contado en central</label>
+          <input type="number" id="contado-${doc.id}" placeholder="Monto contado en central">
+        </div>
+
+        <button onclick="controlarCierre('${doc.id}', ${data.montoEnviado || 0}, '${data.fechaTexto || ""}', '${data.nombreCajero || ""}')">
+          ✅ Controlar cierre
+        </button>
+      `;
+
+      listaCierres.appendChild(div);
+    });
+  }, (error) => {
+    console.log("ERROR AL CARGAR CIERRES:", error);
+    alert("Error al cargar cierres");
+  });
+
+function controlarCierre(id, montoEnviado, fechaTexto, nombreCajero) {
+  const input = document.getElementById(`contado-${id}`);
+  const montoContado = parseFloat(input.value);
+
+  if (isNaN(montoContado)) {
+    alert("Ingresá el monto contado");
+    return;
+  }
+
+  const diferencia = montoContado - montoEnviado;
+
+  db.collection("cierres_caja").doc(id).update({
+    montoContadoCentral: montoContado,
+    diferencia: diferencia,
+    estadoControl: "controlado"
+  })
+  .then(() => {
+    if (diferencia !== 0) {
+      return db.collection("diferencias_caja").add({
+        fechaTexto: fechaTexto,
+        nombreCajero: nombreCajero,
+        montoEnviado: montoEnviado,
+        montoContadoCentral: montoContado,
+        diferencia: diferencia,
+        fecha: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  })
+  .then(() => {
+    alert("Cierre controlado correctamente");
+  })
+  .catch((error) => {
+    console.log("ERROR AL CONTROLAR CIERRE:", error);
+    alert("Error al controlar cierre");
+  });
+}
+
+db.collection("pedidos_central").doc("pendiente_general")
+  .onSnapshot((doc) => {
+    listaPedidos.innerHTML = "";
+
+    if (!doc.exists) {
+      listaPedidos.innerHTML = `<div class="panel-card"><p>No hay productos pendientes de envío.</p></div>`;
+      return;
+    }
+
+    const data = doc.data();
+    const productos = data.productos || {};
+
+    if (Object.keys(productos).length === 0) {
+      listaPedidos.innerHTML = `<div class="panel-card"><p>No hay productos pendientes de envío.</p></div>`;
+      return;
+    }
+
+    const div = document.createElement("div");
+    div.className = "panel-card";
+
+    div.innerHTML = `
+      <h3>Pedido pendiente general</h3>
+      <p>Última fecha: ${data.ultimaFechaTexto || "-"}</p>
+      <p>Último cierre: ${data.ultimoCierreId || "-"}</p>
+      <div>${renderPedidoDetalle(productos, "pendiente_general")}</div>
+      <button onclick="mandarPedido('pendiente_general')">📦 Mandar seleccionado</button>
+    `;
+
+    listaPedidos.appendChild(div);
+  }, (error) => {
+    console.log("ERROR AL CARGAR PEDIDO GENERAL:", error);
+    alert("Error al cargar pedido pendiente general");
+  });
+function imprimirPedidoCentralEnVentana(ventana, data) {
+  if (!ventana) {
+    alert("El navegador bloqueó la impresión. Permití ventanas emergentes.");
+    return;
+  }
+
+  const productos = data.productos || {};
+  let itemsHTML = "";
+
+  for (let producto in productos) {
+    itemsHTML += `<li>${producto} x${productos[producto].cantidad}</li>`;
+  }
+
+  ventana.document.write(`
+    <html>
+    <head>
+      <title>Pedido central</title>
+      <style>
+        body { font-family: monospace; font-size: 16px; padding: 10px; }
+        h2, h3 { text-align: center; margin: 4px 0; }
+        ul { padding-left: 18px; }
+        li { margin-bottom: 8px; font-size: 18px; font-weight:bold; }
+        .linea { border-top: 1px dashed #000; margin: 10px 0; }
+      </style>
+    </head>
+    <body>
+      <h2>ORANGE BREWERY</h2>
+      <h3>PEDIDO PARA MANDAR</h3>
+      <div class="linea"></div>
+      <p><strong>Fecha:</strong> ${data.ultimaFechaTexto || data.fechaTexto || "-"}</p>
+      <p><strong>Último cierre:</strong> ${data.ultimoCierreId || data.cierreId || "-"}</p>
+      <div class="linea"></div>
+      <ul>${itemsHTML}</ul>
+      <div class="linea"></div>
+      <p>${new Date().toLocaleString("es-AR")}</p>
+      <script>
+        window.print();
+        setTimeout(() => window.close(), 800);
+      <\/script>
+    </body>
+    </html>
+  `);
+
+  ventana.document.close();
+}
+async function mandarPedido(id) {
+  const ventanaImpresion = window.open("", "_blank", "width=400,height=600");
+
+  try {
+    const ref = db.collection("pedidos_central").doc(id);
+    const doc = await ref.get();
+
+    if (!doc.exists) {
+      alert("Pedido no encontrado");
+      if (ventanaImpresion) ventanaImpresion.close();
+      return;
+    }
+
+    const data = doc.data();
+    const productosOriginales = data.productos || {};
+    const productosAMandar = {};
+
+    for (let producto in productosOriginales) {
+      const inputId = `mandar-${id}-${producto.replace(/[^a-zA-Z0-9]/g, "_")}`;
+      const input = document.getElementById(inputId);
+
+      const cantidadDisponible = Number(productosOriginales[producto].cantidad || 0);
+      let cantidadMandar = input ? parseInt(input.value) || 0 : 0;
+
+      if (cantidadMandar < 0) cantidadMandar = 0;
+      if (cantidadMandar > cantidadDisponible) cantidadMandar = cantidadDisponible;
+
+      if (cantidadMandar > 0) {
+        productosAMandar[producto] = {
+          cantidad: cantidadMandar,
+          sector: productosOriginales[producto].sector || ""
+        };
+      }
+    }
+
+    if (Object.keys(productosAMandar).length === 0) {
+      alert("No seleccionaste ningún producto para mandar");
+      if (ventanaImpresion) ventanaImpresion.close();
+      return;
+    }
+
+    imprimirPedidoCentralEnVentana(ventanaImpresion, {
+      ...data,
+      productos: productosAMandar
+    });
+
+    await db.runTransaction(async (transaction) => {
+      const docActual = await transaction.get(ref);
+      if (!docActual.exists) return;
+
+      const dataActual = docActual.data();
+      const productosActuales = dataActual.productos || {};
+
+      for (let producto in productosAMandar) {
+        const cantidadMandada = Number(productosAMandar[producto].cantidad || 0);
+        const cantidadActual = Number(productosActuales[producto]?.cantidad || 0);
+        const nuevaCantidad = cantidadActual - cantidadMandada;
+
+        if (nuevaCantidad > 0) {
+          productosActuales[producto].cantidad = nuevaCantidad;
+        } else {
+          delete productosActuales[producto];
+        }
+      }
+
+      transaction.set(ref, {
+        productos: productosActuales,
+        estadoEnvio: Object.keys(productosActuales).length > 0 ? "pendiente" : "sin_pendientes",
+        ultimoEnvio: productosAMandar,
+        fechaUltimoEnvio: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    });
+
+    alert("Pedido enviado, impreso y descontado del pendiente");
+
+  } catch (error) {
+    console.log("ERROR AL MANDAR PEDIDO:", error);
+    alert("Error al mandar pedido");
+    if (ventanaImpresion) ventanaImpresion.close();
+  }
+}
+
+db.collection("sectores_menu")
+  .onSnapshot((snapshot) => {
+    sectoresMenuCache = [];
+
+    snapshot.forEach((doc) => {
+      sectoresMenuCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    actualizarSelectoresSectores();
+
+if (productoEditandoId) {
+  const productoEditando = productosCache.find(p => p.id === productoEditandoId);
+  actualizarCategoriasPorSector(productoEditando?.categoria || "");
+} else {
+  actualizarCategoriasPorSector();
+}
+  }, (error) => {
+    console.log("ERROR AL CARGAR SECTORES MENU:", error);
+  });
+
+db.collection("sectores_produccion")
+  .onSnapshot((snapshot) => {
+    sectoresProduccionCache = [];
+
+    snapshot.forEach((doc) => {
+      sectoresProduccionCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    actualizarSelectoresProduccion();
+
+  }, (error) => {
+    console.log("ERROR AL CARGAR SECTORES PRODUCCION:", error);
+  });
+
+db.collection("productos")
+  .orderBy("nombre", "asc")
+  .onSnapshot((snapshot) => {
+    productosCache = [];
+
+    snapshot.forEach((doc) => {
+      productosCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    aplicarFiltroProductos();
+    renderProductosDisparadores();
+  }, (error) => {
+    console.log("ERROR AL CARGAR PRODUCTOS:", error);
+    alert("Error al cargar productos");
+  });
+document.getElementById("filtroFechaGanancias").value = obtenerFechaTextoLocal();
+actualizarOpcionesEspecialesProducto();
+renderSaboresProducto();
+renderProductosDisparadores();
+cargarInfoMenuPublicado();
+function cerrarSesion() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+</script>
+
+</body>
+</html>

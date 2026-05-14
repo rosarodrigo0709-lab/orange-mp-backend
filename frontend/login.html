@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login Operarios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="panel-body">
+
+<div class="panel-container">
+
+  <div class="panel-header">
+    <div class="panel-title-wrap">
+      <h1 class="panel-title">🔐 LOGIN</h1>
+      <p class="panel-subtitle" id="tituloSectorLogin">Acceso operarios Orange Brewery</p>
+    </div>
+    <div class="panel-badge">Sistema</div>
+  </div>
+
+  <div class="panel-card">
+    <label>Usuario:</label>
+    <select id="email"></select>
+
+    <label>Contraseña:</label>
+    <input type="password" id="password" placeholder="Contraseña">
+
+    <button onclick="loginOperario()">Ingresar</button>
+
+    <button class="btn-secundario" onclick="cambiarSector()" style="margin-top:10px;">
+      🔄 Cambiar sector
+    </button>
+
+    <p id="mensajeLogin" style="margin-top:15px;color:#ff9800;font-weight:bold;"></p>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCeSa8_KjYq0BjIv1hEpxNUs-jpffKhbIY",
+  authDomain: "brawery-orange.firebaseapp.com",
+  projectId: "brawery-orange",
+  storageBucket: "brawery-orange.firebasestorage.app",
+  messagingSenderId: "937233603823",
+  appId: "1:937233603823:web:fee3377fd43e72c2818f1a"
+};
+
+firebase.initializeApp(firebaseConfig);
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+const usuariosPorSector = {
+  "caja.html": {
+    titulo: "Acceso a Caja",
+    usuarios: [
+      { nombre: "Caja central", email: "caja@orange.com" },
+      { nombre: "Administrador", email: "admin@orange.com" }
+    ]
+  },
+
+  "caja_movil.html": {
+    titulo: "Acceso a Caja móvil",
+    usuarios: [
+      { nombre: "Caja móvil 1", email: "caja_movil1@orange.com" },
+      { nombre: "Caja móvil 2", email: "caja_movil2@orange.com" },
+      { nombre: "Caja móvil 3", email: "caja_movil3@orange.com" },
+      { nombre: "Caja móvil 4", email: "caja_movil4@orange.com" },
+      { nombre: "Caja móvil 5", email: "caja_movil5@orange.com" },
+      { nombre: "Administrador", email: "admin@orange.com" }
+    ]
+  },
+
+  "cocina.html": {
+    titulo: "Acceso a Cocina",
+    usuarios: [
+      { nombre: "Cocina 1", email: "cocina@orange.com" },
+      { nombre: "Cocina 2", email: "cocina2@orange.com" },
+      { nombre: "Administrador", email: "admin@orange.com" }
+    ]
+  },
+
+  "bebidas.html": {
+    titulo: "Acceso a Bebidas",
+    usuarios: [
+      { nombre: "Bebidas", email: "bebidas@orange.com" },
+      { nombre: "Administrador", email: "admin@orange.com" }
+    ]
+  },
+
+  "tragos.html": {
+    titulo: "Acceso a Tragos",
+    usuarios: [
+      { nombre: "Tragos", email: "tragos@orange.com" },
+      { nombre: "Administrador", email: "admin@orange.com" }
+    ]
+  },
+
+  "cierre.html": {
+    titulo: "Acceso a Cierres",
+    usuarios: [
+      { nombre: "Cierres / Administrador", email: "admin@orange.com" }
+    ]
+  },
+
+  "admin.html": {
+    titulo: "Acceso a Administración",
+    usuarios: [
+      { nombre: "Administrador", email: "admin@orange.com" }
+    ]
+  }
+};
+
+function cargarUsuariosDelSector() {
+  const volverA = localStorage.getItem("volverDespuesLogin") || "inicio.html";
+
+  if (volverA === "inicio.html") {
+    window.location.href = "inicio.html";
+    return;
+  }
+
+  let config = usuariosPorSector[volverA];
+
+  if (!config && volverA.startsWith("sector.html?sector=")) {
+    const params = new URLSearchParams(volverA.split("?")[1]);
+    const sector = params.get("sector") || "sector";
+
+    config = {
+      titulo: "Acceso a " + sector.replace(/_/g, " ").toUpperCase(),
+      usuarios: [
+        { nombre: "Administrador", email: "admin@orange.com" }
+      ]
+    };
+  }
+
+  if (!config) {
+    window.location.href = "inicio.html";
+    return;
+  }
+
+  document.getElementById("tituloSectorLogin").textContent = config.titulo;
+
+  const select = document.getElementById("email");
+  select.innerHTML = "";
+
+  config.usuarios.forEach((usuario) => {
+    const option = document.createElement("option");
+    option.value = usuario.email;
+    option.textContent = usuario.nombre;
+    select.appendChild(option);
+  });
+}
+
+async function loginOperario() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value.trim();
+  const mensaje = document.getElementById("mensajeLogin");
+
+  if (!email || !password) {
+    mensaje.textContent = "Seleccioná usuario e ingresá contraseña";
+    return;
+  }
+
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+
+    const volverA = localStorage.getItem("volverDespuesLogin") || "inicio.html";
+
+    mensaje.textContent = "Ingreso correcto";
+    window.location.href = volverA;
+
+  } catch (error) {
+    console.log("ERROR LOGIN:", error);
+    mensaje.textContent = "Contraseña incorrecta o usuario no creado";
+  }
+}
+
+function cambiarSector() {
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.removeItem("volverDespuesLogin");
+      window.location.href = "inicio.html";
+    });
+}
+
+cargarUsuariosDelSector();
+</script>
+
+</body>
+</html>
